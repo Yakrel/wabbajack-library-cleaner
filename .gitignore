@@ -1,0 +1,48 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file
+go.work
+
+# Log files
+*.log
+
+# Test folders
+test_folder/
+
+# Game folders (don't commit actual mod files)
+Skyrim/
+Fallout*/
+Fallout 4/
+Fallout3-NV/
+
+# Archives
+*.7z
+*.zip
+*.rar
+*.tar
+*.gz
+
+# Meta files
+*.meta
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+.claude/
