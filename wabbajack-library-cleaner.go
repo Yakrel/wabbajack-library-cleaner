@@ -1,3 +1,19 @@
+
+// Copyright (C) 2025 Berkay Yetgin
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 package main
 
 import (
@@ -1166,15 +1182,13 @@ func validateModGroup(group *ModGroup) error {
 	}
 
 	baseModID := group.Files[0].ModID
-	baseModName := group.Files[0].ModName
 
-	// Ensure all files have same ModID and ModName
+	// Ensure all files have same ModID
+	// Note: ModName can vary between versions (e.g., "FO4Edit 4.1.5" vs "FO4Edit 4.0.4")
+	// so we only validate that ModID matches
 	for i, file := range group.Files {
 		if file.ModID != baseModID {
 			return fmt.Errorf("file %d has different ModID: %s vs %s", i, file.ModID, baseModID)
-		}
-		if file.ModName != baseModName {
-			return fmt.Errorf("file %d has different ModName: %s vs %s", i, file.ModName, baseModName)
 		}
 	}
 
