@@ -5,7 +5,7 @@ All notable changes to Wabbajack Library Cleaner will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.1] - 2025-10-29
+## 1.0.1 - 2025-10-29
 
 ### Fixed
 - **Critical:** Fixed duplicate detection algorithm to correctly identify mod versions
@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Patch/hotfix detection system to preserve base files
 - Comprehensive logging of skipped groups for audit purposes
 
-## [1.0.0] - 2025-10-28
+## 1.0.0 - 2025-10-28
 
 ### Added
 - Initial release
