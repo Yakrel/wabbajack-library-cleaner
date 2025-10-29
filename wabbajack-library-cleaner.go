@@ -35,6 +35,7 @@ type ModFile struct {
 	Version   string
 	Timestamp string
 	Size      int64
+	IsPatch   bool // True if file appears to be a patch/hotfix/update
 }
 
 // ModGroup represents a group of mod versions
@@ -307,12 +308,281 @@ func parseModFilename(filename string) *ModFile {
 		ModID:     modID,
 		Version:   version,
 		Timestamp: timestamp,
+		IsPatch:   isPatchOrHotfix(filename),
 	}
 }
 
 func isNumeric(s string) bool {
 	_, err := strconv.Atoi(s)
 	return err == nil
+}
+
+// normalizeModName removes version patterns from mod names to group versions together
+// e.g., "Interface 1.3.6" and "Interface 1.4.0" both become "Interface"
+func normalizeModName(modName string) string {
+	// Remove trailing version patterns like " 1.3.6", " v1.2", " V2.0", etc.
+	// Common patterns: " 1.2.3", " v1.2", " V1.2.3", " 0.18"
+
+	// Split by space and remove trailing parts that look like versions
+	parts := strings.Split(modName, " ")
+	var cleanParts []string
+
+	for _, part := range parts {
+		// Check if this part looks like a version number
+		if isVersionPattern(part) {
+			// Stop here - everything after looks like version info
+			break
+		}
+		cleanParts = append(cleanParts, part)
+	}
+
+	if len(cleanParts) == 0 {
+		return modName // Return original if we can't clean it
+	}
+
+	return strings.Join(cleanParts, " ")
+}
+
+// isVersionPattern checks if a string looks like a version number
+func isVersionPattern(s string) bool {
+	s = strings.ToLower(s)
+
+	// Remove leading 'v' or 'V'
+	if strings.HasPrefix(s, "v") {
+		s = s[1:]
+	}
+
+	// Check if it contains only digits and dots/dashes
+	// e.g., "1.3.6", "0.18", "2-0"
+	hasDigit := false
+	for _, c := range s {
+		if c >= '0' && c <= '9' {
+			hasDigit = true
+		} else if c != '.' && c != '-' && c != '_' {
+			return false // Contains non-version characters
+		}
+	}
+
+	return hasDigit
+}
+
+// isPatchOrHotfix detects if a filename indicates a patch/hotfix/update file
+// These keywords suggest the file is a small update, not a full version
+func isPatchOrHotfix(filename string) bool {
+	lower := strings.ToLower(filename)
+	
+	patchKeywords := []string{
+		"patch", "hotfix", "update", "fix", 
+		"- patch", "-patch", " patch",
+		"- hotfix", "-hotfix", " hotfix",
+		"- update", "-update", " update",
+		"- fix", "-fix", " fix",
+	}
+	
+	for _, keyword := range patchKeywords {
+		if strings.Contains(lower, keyword) {
+			return true
+		}
+	}
+	
+	return false
+}
+
+// isFullOrMainFile detects if a filename indicates a full/main file
+func isFullOrMainFile(filename string) bool {
+	lower := strings.ToLower(filename)
+	
+	fullKeywords := []string{
+		"main", "full", "complete", "- main", "-main", " main",
+	}
+	
+	for _, keyword := range fullKeywords {
+		if strings.Contains(lower, keyword) {
+			return true
+		}
+	}
+	
+	return false
+}
+
+// extractPartIndicator detects part numbers in filenames to keep multi-part mods separate
+// Examples: "-1-", "-2-", "Part 1", "Part 2", "(Part 1)", "Pt1", etc.
+func extractPartIndicator(filename string) string {
+	lower := strings.ToLower(filename)
+
+	// Pattern 1: "-1-", "-2-", "-3-", etc. (most common)
+	// Must NOT be preceded by a letter to avoid matching "Part 1-118893"
+	// Should be followed by a letter (like "Meshes") or end of string
+	for i := 1; i <= 20; i++ {
+		pattern := fmt.Sprintf("-%d-", i)
+		idx := strings.Index(lower, pattern)
+		if idx != -1 {
+			// Check what comes BEFORE the pattern
+			if idx > 0 {
+				prevChar := lower[idx-1]
+				// If preceded by a letter or digit (like "Part 1-"), skip
+				if (prevChar >= 'a' && prevChar <= 'z') || (prevChar >= '0' && prevChar <= '9') {
+					continue // Not a valid part indicator
+				}
+			}
+
+			// Check what comes after the pattern
+			afterPattern := idx + len(pattern)
+			if afterPattern >= len(lower) {
+				// End of string - valid
+				return pattern
+			}
+			// Must be followed by a non-digit (letter like "meshes" or space)
+			nextChar := lower[afterPattern]
+			if nextChar < '0' || nextChar > '9' {
+				return pattern
+			}
+			// If followed by many digits (ModID/timestamp), skip
+		}
+	}
+
+	// Pattern 2: "part 1", "part 2", "part1", "part2"
+	// Search from the end to prioritize rightmost occurrence
+	for i := 20; i >= 1; i-- {
+		patterns := []string{
+			fmt.Sprintf("part %d", i),
+			fmt.Sprintf("part%d", i),
+			fmt.Sprintf("(part %d)", i),
+			fmt.Sprintf("pt%d", i),
+			fmt.Sprintf("pt %d", i),
+		}
+		for _, pattern := range patterns {
+			if strings.Contains(lower, pattern) {
+				return fmt.Sprintf(":part%d", i)
+			}
+		}
+	}
+
+	// No part indicator found
+	return ""
+}
+
+// hasSuspiciousVersionPattern detects if a group contains files with same version
+// but likely different content (e.g., different variants or optional files)
+func hasSuspiciousVersionPattern(group *ModGroup) bool {
+	if len(group.Files) < 2 {
+		return false
+	}
+
+	// Check for same version numbers but very different file sizes or close timestamps
+	for i := 0; i < len(group.Files)-1; i++ {
+		for j := i + 1; j < len(group.Files); j++ {
+			file1 := group.Files[i]
+			file2 := group.Files[j]
+
+			// If versions are identical
+			if file1.Version == file2.Version {
+				// Check 1: File size difference > 10x (likely different content)
+				sizeRatio := float64(file1.Size) / float64(file2.Size)
+				if sizeRatio > 10.0 || sizeRatio < 0.1 {
+					logWarning("Group %s: Same version '%s' but size diff >10x (%s vs %s)",
+						group.ModKey, file1.Version,
+						formatSize(file1.Size), formatSize(file2.Size))
+					return true
+				}
+
+				// Check 2: Very close timestamps (< 1 hour apart) with same version
+				// This suggests uploaded at same time as different variants
+				ts1, _ := strconv.ParseInt(file1.Timestamp, 10, 64)
+				ts2, _ := strconv.ParseInt(file2.Timestamp, 10, 64)
+				timeDiff := ts2 - ts1
+				if timeDiff < 0 {
+					timeDiff = -timeDiff
+				}
+
+				oneHour := int64(3600)
+				if timeDiff < oneHour {
+					logWarning("Group %s: Same version '%s' uploaded within 1 hour (likely variants)",
+						group.ModKey, file1.Version)
+					return true
+				}
+			}
+			
+			// Check 3: Different descriptive keywords in filenames (even with different versions)
+			// These indicate different content types: texture quality, mod parts, variants, etc.
+			if hasConflictingDescriptors(file1.FileName, file2.FileName) {
+				logWarning("Group %s: Files have conflicting descriptors - '%s' vs '%s' (likely different content)",
+					group.ModKey, file1.FileName, file2.FileName)
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// hasConflictingDescriptors checks if two filenames have different content descriptors
+// Returns true if files appear to be different variants/parts of the same mod
+func hasConflictingDescriptors(filename1, filename2 string) bool {
+	lower1 := strings.ToLower(filename1)
+	lower2 := strings.ToLower(filename2)
+	
+	// All possible content descriptors - ANY difference suggests different content
+	allDescriptors := []string{
+		// Texture quality
+		" 1k", " 2k", " 4k", " 8k", "-1k", "-2k", "-4k", "-8k",
+		// Body types
+		"cbbe", "uunp", "bhunp", "vanilla body", "bodyslide",
+		// Mod components (usually separate files)
+		" armor", " weapon", " clothes", " clothing", " hair", " gloves", " boots", " helmet", 
+		" meshes", " textures", "-armor", "-weapon", "-clothes", "-hair", "-gloves",
+		// File types/packaging
+		" esp ", " esm ", " esl ", "esp-fe", "esp only", "esm only", "loose files", " bsa",
+		// Compatibility/variants
+		" compat", "compatibility", " aslal", "no worldspace", "worldspace edit", " performance",
+		// Edition types
+		" lite", " light", " full", " extended", " complete", " basic", " standard", " deluxe",
+		// Clean variants
+		" clean", " dirty", " gross",
+		// Optional content
+		" optional", " addon", " add-on", " expansion",
+	}
+	
+	// Check if files have DIFFERENT descriptors
+	descriptors1 := []string{}
+	descriptors2 := []string{}
+	
+	for _, desc := range allDescriptors {
+		if strings.Contains(lower1, desc) {
+			descriptors1 = append(descriptors1, desc)
+		}
+		if strings.Contains(lower2, desc) {
+			descriptors2 = append(descriptors2, desc)
+		}
+	}
+	
+	// If one file has descriptors but the other doesn't, they're likely different
+	// (e.g., "FN 502 - No worldspace edits" vs "FN 502" are different variants)
+	if (len(descriptors1) > 0 && len(descriptors2) == 0) || (len(descriptors1) == 0 && len(descriptors2) > 0) {
+		return true
+	}
+	
+	// If both have descriptors but they don't share any, they're different content
+	if len(descriptors1) > 0 && len(descriptors2) > 0 {
+		hasCommon := false
+		for _, d1 := range descriptors1 {
+			for _, d2 := range descriptors2 {
+				if d1 == d2 {
+					hasCommon = true
+					break
+				}
+			}
+			if hasCommon {
+				break
+			}
+		}
+		
+		if !hasCommon {
+			return true
+		}
+	}
+	
+	return false
 }
 
 func scanFolder(folderPath string) (map[string]*ModGroup, error) {
@@ -357,7 +627,20 @@ func scanFolder(folderPath string) (map[string]*ModGroup, error) {
 		modFile.FullPath = fullPath
 		modFile.Size = info.Size()
 
-		modKey := modFile.ModName + "-" + modFile.ModID
+		// ModKey = ModID + normalized ModName + part indicator (if exists)
+		// Normalization removes version numbers from ModName
+		// Part indicators keep multi-part mods separate (e.g., "-1-", "-2-", "Part 1")
+		// This ensures:
+		// - "Interface 1.3.6-27216" and "Interface 1.4.0-27216" ARE grouped (same base name)
+		// - "Ysmir Hair-112480" and "Ysmir Armor-112480" are NOT grouped (different base names)
+		// - "Rock Remesh -1- Meshes" and "Rock Remesh -2- Textures" are NOT grouped (different parts)
+		normalizedName := normalizeModName(modFile.ModName)
+		// Check both full filename AND modname for part indicators
+		partIndicator := extractPartIndicator(modFile.FileName)
+		if partIndicator == "" {
+			partIndicator = extractPartIndicator(modFile.ModName)
+		}
+		modKey := modFile.ModID + ":" + normalizedName + partIndicator
 
 		if group, exists := modGroups[modKey]; exists {
 			group.Files = append(group.Files, *modFile)
@@ -382,6 +665,19 @@ func scanFolder(folderPath string) (map[string]*ModGroup, error) {
 			continue
 		}
 
+		// Safety check: Ensure files actually have different timestamps
+		// If all files have same timestamp, they're the same file (not duplicates)
+		uniqueTimestamps := make(map[string]bool)
+		for _, f := range group.Files {
+			uniqueTimestamps[f.Timestamp] = true
+		}
+
+		if len(uniqueTimestamps) <= 1 {
+			// All files have same timestamp - skip this group
+			logInfo("Skipped group %s: all files have same timestamp", key)
+			continue
+		}
+
 		// Sort by timestamp, then version
 		sort.Slice(group.Files, func(i, j int) bool {
 			if group.Files[i].Timestamp != group.Files[j].Timestamp {
@@ -389,6 +685,60 @@ func scanFolder(folderPath string) (map[string]*ModGroup, error) {
 			}
 			return group.Files[i].Version < group.Files[j].Version
 		})
+
+		// Additional safety: Check for same-version but different content files
+		// These are likely different variants (e.g., "CLEAN" vs "GROSS", "ESP" vs "2K textures")
+		// Skip if we detect suspicious patterns:
+		if hasSuspiciousVersionPattern(group) {
+			logWarning("Skipped group %s: detected same version with likely different content", key)
+			continue
+		}
+
+		// PATCH/HOTFIX DETECTION:
+		// If group contains both PATCH and MAIN/FULL files, they're NOT duplicates
+		// Example: "AKM Complex - 1.0 - MAIN" (772 MB) vs "AKM Complex - 1.0.2 - PATCH" (715 KB)
+		hasPatch := false
+		hasMain := false
+		
+		for _, f := range group.Files {
+			if f.IsPatch {
+				hasPatch = true
+			}
+			if isFullOrMainFile(f.FileName) {
+				hasMain = true
+			}
+		}
+		
+		// If we have both patch and main files, skip this group
+		if hasPatch && hasMain {
+			logWarning("Skipped group %s: contains both PATCH and MAIN files (not duplicates)", key)
+			continue
+		}
+		
+		// CRITICAL: If newest file is a patch/hotfix/update and significantly smaller than older versions
+		// This likely means patch should be applied TO the old version, not replace it
+		// Check this REGARDLESS of whether old files are labeled as "MAIN"
+		newestFile := group.Files[len(group.Files)-1]
+		shouldSkipPatch := false
+		if newestFile.IsPatch && len(group.Files) > 1 {
+			// Check size ratio - if patch is <10% of ANY older version size, this is suspicious
+			for i := 0; i < len(group.Files)-1; i++ {
+				oldFile := group.Files[i]
+				sizeRatio := float64(newestFile.Size) / float64(oldFile.Size)
+				
+				if sizeRatio < 0.1 { // Patch is less than 10% of old version
+					logWarning("Skipped group %s: newest file '%s' (%s) is %.2f%% size of '%s' (%s) - likely a patch that needs old file",
+						key, newestFile.FileName, formatSize(newestFile.Size), 
+						sizeRatio*100, oldFile.FileName, formatSize(oldFile.Size))
+					shouldSkipPatch = true
+					break
+				}
+			}
+		}
+		
+		if shouldSkipPatch {
+			continue
+		}
 
 		// Newest is last
 		group.NewestIdx = len(group.Files) - 1

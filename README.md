@@ -60,7 +60,7 @@ This tool scans your downloads folder, identifies duplicate mod versions, and re
 ### Compile from Source (Optional)
 ```bash
 # Prerequisites: Go 1.25 or later
-go build -ldflags="-s -w" -o wabbajack-library-cleaner.exe wabbajack-library-cleaner.go
+go build -ldflags="-s -w" -o wabbajack-library-cleaner.exe
 ```
 
 ## ️ Mod File Naming Convention
@@ -126,6 +126,6 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 ---
 
-**Current Version:** v1.0
+**Current Version:** v1.0.1
 
 See [CHANGELOG](CHANGELOG.md) for version history.
