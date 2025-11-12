@@ -17,8 +17,11 @@
 package main
 
 import (
+	"archive/zip"
 	"bufio"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -68,6 +71,47 @@ type Config struct {
 	MaxVersionsToKeep int
 	MinFileSizeMB    float64
 	SafeMode         bool
+}
+
+// ModlistArchive represents a parsed modlist archive entry
+type ModlistArchive struct {
+	Hash  string          `json:"Hash"`
+	Name  string          `json:"Name"`
+	Size  int64           `json:"Size"`
+	State ModlistModState `json:"State"`
+}
+
+// ModlistModState represents the state field of a modlist archive
+type ModlistModState struct {
+	Type     string `json:"$type"`
+	ModID    int64  `json:"ModID"`
+	FileID   int64  `json:"FileID"`
+	GameName string `json:"GameName"`
+	Name     string `json:"Name"`
+	Version  string `json:"Version"`
+}
+
+// Modlist represents a parsed .wabbajack file
+type Modlist struct {
+	Name     string             `json:"Name"`
+	Version  string             `json:"Version"`
+	Author   string             `json:"Author"`
+	Archives []ModlistArchive   `json:"Archives"`
+}
+
+// ModlistInfo contains information about a modlist
+type ModlistInfo struct {
+	FilePath    string
+	Name        string
+	IsActive    bool
+	ModCount    int
+	UsedModKeys map[string]bool // ModID-based keys for quick lookup
+}
+
+// OrphanedMod represents a mod file that's not used by any active modlist
+type OrphanedMod struct {
+	File          ModFile
+	EstimatedFrom string // Which modlist it likely came from (if deleted)
 }
 
 var config Config
@@ -165,7 +209,7 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		printMenu()
-		fmt.Print("\nSelect option (1-3): ")
+		fmt.Print("\nSelect option (1-6): ")
 
 		if !scanner.Scan() {
 			break
@@ -181,6 +225,15 @@ func main() {
 			// Delete from specific folder
 			scanSpecificFolder(gameFolders, scanner, true)
 		case "3":
+			// Scan for orphaned mods - Dry run
+			scanOrphanedMods(baseDir, gameFolders, scanner, false)
+		case "4":
+			// Clean orphaned mods
+			scanOrphanedMods(baseDir, gameFolders, scanner, true)
+		case "5":
+			// View statistics
+			viewStatistics(gameFolders)
+		case "6":
 			fmt.Printf("\n%sGoodbye!%s\n", ColorCyan, ColorReset)
 			logInfo("Program exited by user")
 			return
@@ -197,9 +250,12 @@ func printMenu() {
 	fmt.Printf("\n%s%s", ColorPurple, strings.Repeat("=", 100))
 	fmt.Printf("\n%35s%s%s\n", "", "WABBAJACK LIBRARY CLEANER", "")
 	fmt.Printf("%s%s\n", strings.Repeat("=", 100), ColorReset)
-	fmt.Printf("%s1.%s Scan folder (Dry-run - preview only)\n", ColorBold, ColorReset)
-	fmt.Printf("%s2.%s Clean folder (Delete old versions)\n", ColorBold, ColorReset)
-	fmt.Printf("%s3.%s Exit\n", ColorBold, ColorReset)
+	fmt.Printf("%s1.%s Scan folder (Dry-run) - Preview old versions\n", ColorBold, ColorReset)
+	fmt.Printf("%s2.%s Clean folder - Delete old versions\n", ColorBold, ColorReset)
+	fmt.Printf("\n%s3.%s Scan for orphaned mods (Dry-run) - Preview unused mods\n", ColorBold, ColorReset)
+	fmt.Printf("%s4.%s Clean orphaned mods - Delete unused mods\n", ColorBold, ColorReset)
+	fmt.Printf("\n%s5.%s View statistics\n", ColorBold, ColorReset)
+	fmt.Printf("%s6.%s Exit\n", ColorBold, ColorReset)
 	fmt.Printf("\n%s[!] Always run Dry-run first!%s\n", ColorYellow, ColorReset)
 }
 
@@ -1193,4 +1249,457 @@ func validateModGroup(group *ModGroup) error {
 	}
 
 	return nil
+}
+
+// findWabbajackFiles searches for .wabbajack files in the base directory
+func findWabbajackFiles(baseDir string) ([]string, error) {
+	var wabbajackFiles []string
+
+	entries, err := os.ReadDir(baseDir)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		if strings.HasSuffix(strings.ToLower(entry.Name()), ".wabbajack") {
+			wabbajackFiles = append(wabbajackFiles, filepath.Join(baseDir, entry.Name()))
+		}
+	}
+
+	return wabbajackFiles, nil
+}
+
+// parseWabbajackFile parses a .wabbajack file (ZIP archive) and extracts modlist information
+func parseWabbajackFile(filePath string) (*ModlistInfo, error) {
+	logInfo("Parsing wabbajack file: %s", filePath)
+
+	reader, err := zip.OpenReader(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open wabbajack file: %w", err)
+	}
+	defer reader.Close()
+
+	// Find and read the "modlist" file (JSON without extension)
+	var modlistFile *zip.File
+	for _, file := range reader.File {
+		if file.Name == "modlist" {
+			modlistFile = file
+			break
+		}
+	}
+
+	if modlistFile == nil {
+		return nil, fmt.Errorf("modlist file not found in archive")
+	}
+
+	rc, err := modlistFile.Open()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open modlist file: %w", err)
+	}
+	defer rc.Close()
+
+	data, err := io.ReadAll(rc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read modlist file: %w", err)
+	}
+
+	var modlist Modlist
+	if err := json.Unmarshal(data, &modlist); err != nil {
+		return nil, fmt.Errorf("failed to parse modlist JSON: %w", err)
+	}
+
+	// Build a map of used mod keys (ModID-based)
+	usedModKeys := make(map[string]bool)
+	for _, archive := range modlist.Archives {
+		if archive.State.ModID > 0 {
+			// Use ModID as the key for matching
+			modKey := fmt.Sprintf("%d", archive.State.ModID)
+			usedModKeys[modKey] = true
+		}
+	}
+
+	info := &ModlistInfo{
+		FilePath:    filePath,
+		Name:        modlist.Name,
+		IsActive:    true, // Will be determined by user selection
+		ModCount:    len(modlist.Archives),
+		UsedModKeys: usedModKeys,
+	}
+
+	logInfo("Parsed modlist '%s': %d archives, %d unique ModIDs", modlist.Name, len(modlist.Archives), len(usedModKeys))
+	return info, nil
+}
+
+// getAllModFiles collects all mod files from game folders
+func getAllModFiles(gameFolders []string) ([]ModFile, error) {
+	var allFiles []ModFile
+
+	for _, folder := range gameFolders {
+		entries, err := os.ReadDir(folder)
+		if err != nil {
+			logWarning("Failed to read folder %s: %v", folder, err)
+			continue
+		}
+
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+
+			filename := entry.Name()
+			if !isWabbajackFile(filename) {
+				continue
+			}
+
+			modFile := parseModFilename(filename)
+			if modFile == nil {
+				continue
+			}
+
+			fullPath := filepath.Join(folder, filename)
+			info, err := os.Stat(fullPath)
+			if err != nil {
+				continue
+			}
+
+			modFile.FullPath = fullPath
+			modFile.Size = info.Size()
+			allFiles = append(allFiles, *modFile)
+		}
+	}
+
+	return allFiles, nil
+}
+
+// detectOrphanedMods compares mod files with active modlists and finds orphaned mods
+func detectOrphanedMods(modFiles []ModFile, activeModlists []*ModlistInfo) (used []ModFile, orphaned []OrphanedMod) {
+	// Build a combined set of all used ModIDs from active modlists
+	usedModIDs := make(map[string]bool)
+	for _, modlist := range activeModlists {
+		for modKey := range modlist.UsedModKeys {
+			usedModIDs[modKey] = true
+		}
+	}
+
+	logInfo("Total unique ModIDs in active modlists: %d", len(usedModIDs))
+
+	// Classify each mod file
+	for _, modFile := range modFiles {
+		if usedModIDs[modFile.ModID] {
+			used = append(used, modFile)
+		} else {
+			orphaned = append(orphaned, OrphanedMod{
+				File:          modFile,
+				EstimatedFrom: "Unknown",
+			})
+		}
+	}
+
+	logInfo("Classification complete: %d used, %d orphaned", len(used), len(orphaned))
+	return used, orphaned
+}
+
+// scanOrphanedMods implements the orphaned mods detection feature
+func scanOrphanedMods(baseDir string, gameFolders []string, scanner *bufio.Scanner, deleteMode bool) {
+	fmt.Printf("\n%s%s", ColorPurple, strings.Repeat("=", 100))
+	fmt.Printf("\n%35s%s%s\n", "", "MODLIST-BASED CLEANUP", "")
+	fmt.Printf("%s%s\n", strings.Repeat("=", 100), ColorReset)
+
+	// Step 1: Find .wabbajack files
+	wabbajackFiles, err := findWabbajackFiles(baseDir)
+	if err != nil {
+		fmt.Printf("%s[ERROR]%s Failed to search for wabbajack files: %v\n", ColorRed, ColorReset, err)
+		logError("Failed to search for wabbajack files: %v", err)
+		return
+	}
+
+	if len(wabbajackFiles) == 0 {
+		fmt.Printf("\n%s[ERROR]%s No .wabbajack files found in directory!\n", ColorRed, ColorReset)
+		fmt.Printf("\n%s[INFO]%s This feature requires .wabbajack modlist files to work.\n", ColorCyan, ColorReset)
+		fmt.Printf("Place your .wabbajack files in: %s%s%s\n", ColorYellow, baseDir, ColorReset)
+		fmt.Printf("\nExample:\n")
+		fmt.Printf("  %sF:\\Wabbajack\\%s\n", ColorCyan, ColorReset)
+		fmt.Printf("  ├─ Uranium Fever.wabbajack\n")
+		fmt.Printf("  ├─ FAnomaly.wabbajack\n")
+		fmt.Printf("  ├─ Skyrim\\          %s<-- Mod archives%s\n", ColorYellow, ColorReset)
+		fmt.Printf("  └─ Fallout4\\        %s<-- Mod archives%s\n", ColorYellow, ColorReset)
+		logInfo("No wabbajack files found in: %s", baseDir)
+		return
+	}
+
+	fmt.Printf("\n%s[FOUND]%s Detected %d modlist file(s):\n", ColorGreen, ColorReset, len(wabbajackFiles))
+
+	// Step 2: Parse all wabbajack files
+	var modlistInfos []*ModlistInfo
+	for i, wbFile := range wabbajackFiles {
+		fmt.Printf("  %d. %s ... ", i+1, filepath.Base(wbFile))
+		
+		info, err := parseWabbajackFile(wbFile)
+		if err != nil {
+			fmt.Printf("%s[FAILED]%s %v\n", ColorRed, ColorReset, err)
+			logError("Failed to parse %s: %v", wbFile, err)
+			continue
+		}
+		
+		fmt.Printf("%s[OK]%s (%d mods)\n", ColorGreen, ColorReset, info.ModCount)
+		modlistInfos = append(modlistInfos, info)
+	}
+
+	if len(modlistInfos) == 0 {
+		fmt.Printf("\n%s[ERROR]%s Failed to parse any modlist files!\n", ColorRed, ColorReset)
+		return
+	}
+
+	// Step 3: Let user select which modlists they're using
+	fmt.Printf("\n%s[SELECT]%s Which modlists are you CURRENTLY USING?\n", ColorCyan, ColorReset)
+	for i, info := range modlistInfos {
+		fmt.Printf("  [%d] %s (%d mods)\n", i+1, info.Name, info.ModCount)
+	}
+	fmt.Printf("\n%sEnter numbers separated by commas (e.g., 1,2,3) or 'all': %s", ColorBold, ColorReset)
+
+	if !scanner.Scan() {
+		return
+	}
+
+	selection := strings.TrimSpace(scanner.Text())
+	var activeModlists []*ModlistInfo
+
+	if strings.ToLower(selection) == "all" {
+		activeModlists = modlistInfos
+	} else {
+		selections := strings.Split(selection, ",")
+		for _, sel := range selections {
+			idx, err := strconv.Atoi(strings.TrimSpace(sel))
+			if err != nil || idx < 1 || idx > len(modlistInfos) {
+				fmt.Printf("%s[WARN]%s Invalid selection: %s\n", ColorYellow, ColorReset, sel)
+				continue
+			}
+			activeModlists = append(activeModlists, modlistInfos[idx-1])
+		}
+	}
+
+	if len(activeModlists) == 0 {
+		fmt.Printf("%s[ERROR]%s No valid modlists selected!\n", ColorRed, ColorReset)
+		return
+	}
+
+	fmt.Printf("\n%s[SELECTED]%s Active modlists:\n", ColorGreen, ColorReset)
+	for _, ml := range activeModlists {
+		fmt.Printf("  ✓ %s\n", ml.Name)
+	}
+
+	// Step 4: Scan all mod files
+	fmt.Printf("\n%s[SCANNING]%s Collecting mod files from game folders...\n", ColorCyan, ColorReset)
+	allModFiles, err := getAllModFiles(gameFolders)
+	if err != nil {
+		fmt.Printf("%s[ERROR]%s Failed to collect mod files: %v\n", ColorRed, ColorReset, err)
+		return
+	}
+
+	fmt.Printf("%s[OK]%s Found %d mod files\n", ColorGreen, ColorReset, len(allModFiles))
+
+	// Step 5: Detect orphaned mods
+	fmt.Printf("\n%s[ANALYZING]%s Detecting orphaned mods...\n", ColorCyan, ColorReset)
+	usedMods, orphanedMods := detectOrphanedMods(allModFiles, activeModlists)
+
+	// Step 6: Display results
+	showOrphanedReport(usedMods, orphanedMods, activeModlists)
+
+	// Step 7: Delete if in delete mode
+	if deleteMode && len(orphanedMods) > 0 {
+		totalSize := int64(0)
+		for _, om := range orphanedMods {
+			totalSize += om.File.Size
+		}
+
+		fmt.Printf("\n%s[WARNING]%s This will DELETE %d orphaned mods (%s)!\n",
+			ColorRed, ColorReset, len(orphanedMods), formatSize(totalSize))
+		fmt.Printf("%sType 'DELETE' (in uppercase) to confirm: %s", ColorRed, ColorReset)
+
+		if !scanner.Scan() {
+			return
+		}
+
+		if strings.TrimSpace(scanner.Text()) != "DELETE" {
+			fmt.Printf("%s[CANCELLED]%s Operation cancelled.\n", ColorYellow, ColorReset)
+			logInfo("Orphaned mod deletion cancelled by user")
+			return
+		}
+
+		deleteOrphanedMods(orphanedMods)
+	}
+}
+
+// showOrphanedReport displays a detailed report of used and orphaned mods
+func showOrphanedReport(usedMods []ModFile, orphanedMods []OrphanedMod, activeModlists []*ModlistInfo) {
+	fmt.Printf("\n%s%s", ColorPurple, strings.Repeat("=", 100))
+	fmt.Printf("\nRESULTS")
+	fmt.Printf("\n%s%s\n", strings.Repeat("=", 100), ColorReset)
+
+	// Calculate totals
+	usedSize := int64(0)
+	for _, mod := range usedMods {
+		usedSize += mod.Size
+	}
+
+	orphanedSize := int64(0)
+	for _, om := range orphanedMods {
+		orphanedSize += om.File.Size
+	}
+
+	// Show used mods summary
+	fmt.Printf("\n%s✓ USED MODS:%s %d mods (%s)\n", ColorGreen, ColorReset, len(usedMods), formatSize(usedSize))
+	fmt.Printf("  These mods are used by your active modlist(s):\n")
+	for _, ml := range activeModlists {
+		fmt.Printf("    • %s\n", ml.Name)
+	}
+
+	// Show orphaned mods summary
+	fmt.Printf("\n%s✗ ORPHANED MODS:%s %d mods (%s)\n", ColorRed, ColorReset, len(orphanedMods), formatSize(orphanedSize))
+	if len(orphanedMods) == 0 {
+		fmt.Printf("  %sNo orphaned mods found! Your library is clean.%s\n", ColorGreen, ColorReset)
+	} else {
+		fmt.Printf("  These mods are NOT used by any of your active modlists.\n")
+		fmt.Printf("  They may be from deleted or inactive modlists.\n\n")
+
+		// Show some examples (up to 10)
+		exampleCount := len(orphanedMods)
+		if exampleCount > 10 {
+			exampleCount = 10
+		}
+
+		fmt.Printf("  %sExamples:%s\n", ColorYellow, ColorReset)
+		for i := 0; i < exampleCount; i++ {
+			om := orphanedMods[i]
+			fmt.Printf("    • %s (%s)\n", om.File.FileName, formatSize(om.File.Size))
+		}
+
+		if len(orphanedMods) > 10 {
+			fmt.Printf("    ... and %d more\n", len(orphanedMods)-10)
+		}
+	}
+
+	fmt.Printf("\n%s%s\n", strings.Repeat("=", 100), ColorReset)
+}
+
+// deleteOrphanedMods deletes orphaned mod files
+func deleteOrphanedMods(orphanedMods []OrphanedMod) {
+	deletedCount := 0
+	spaceFreed := int64(0)
+
+	fmt.Printf("\n%s[DELETING]%s Starting deletion...\n", ColorCyan, ColorReset)
+
+	for _, om := range orphanedMods {
+		file := om.File
+
+		// Verify file still exists
+		if _, err := os.Stat(file.FullPath); os.IsNotExist(err) {
+			logWarning("File no longer exists: %s", file.FullPath)
+			continue
+		}
+
+		// Check if file is locked
+		if isFileLocked(file.FullPath) {
+			fmt.Printf("%s[WARN]%s File is locked (in use): %s\n", ColorYellow, ColorReset, file.FileName)
+			logWarning("File locked: %s", file.FullPath)
+			continue
+		}
+
+		// Delete main file
+		err := os.Remove(file.FullPath)
+		if err != nil {
+			fmt.Printf("%s[ERROR]%s Failed to delete %s: %v\n", ColorRed, ColorReset, file.FileName, err)
+			logError("Failed to delete %s: %v", file.FullPath, err)
+			continue
+		}
+
+		deletedCount++
+		spaceFreed += file.Size
+		fmt.Printf("%s[OK]%s Deleted: %s (%s)\n", ColorGreen, ColorReset, file.FileName, formatSize(file.Size))
+		logInfo("Successfully deleted orphaned mod: %s (%s)", file.FileName, formatSize(file.Size))
+
+		// Delete .meta file
+		metaPath := file.FullPath + ".meta"
+		if _, err := os.Stat(metaPath); err == nil {
+			if err := os.Remove(metaPath); err == nil {
+				fmt.Printf("%s[OK]%s Deleted: %s.meta\n", ColorGreen, ColorReset, file.FileName)
+				logInfo("Deleted meta file: %s.meta", file.FileName)
+			} else {
+				logWarning("Failed to delete meta file: %s.meta - %v", file.FileName, err)
+			}
+		}
+	}
+
+	fmt.Printf("\n%s[COMPLETED]%s\n", ColorGreen, ColorReset)
+	fmt.Printf("Total deleted: %s%d%s files\n", ColorYellow, deletedCount, ColorReset)
+	fmt.Printf("Total space freed: %s%s%s\n", ColorYellow, formatSize(spaceFreed), ColorReset)
+	logInfo("Orphaned mod deletion complete: %d files, %s freed", deletedCount, formatSize(spaceFreed))
+}
+
+// viewStatistics displays statistics about the mod library
+func viewStatistics(gameFolders []string) {
+	fmt.Printf("\n%s%s", ColorPurple, strings.Repeat("=", 100))
+	fmt.Printf("\n%35s%s%s\n", "", "LIBRARY STATISTICS", "")
+	fmt.Printf("%s%s\n", strings.Repeat("=", 100), ColorReset)
+
+	totalFiles := 0
+	totalSize := int64(0)
+	gameStats := make(map[string]struct {
+		files int
+		size  int64
+	})
+
+	for _, folder := range gameFolders {
+		entries, err := os.ReadDir(folder)
+		if err != nil {
+			continue
+		}
+
+		gameFiles := 0
+		gameSize := int64(0)
+
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+
+			filename := entry.Name()
+			if !isWabbajackFile(filename) {
+				continue
+			}
+
+			info, err := entry.Info()
+			if err != nil {
+				continue
+			}
+
+			gameFiles++
+			gameSize += info.Size()
+		}
+
+		gameName := filepath.Base(folder)
+		gameStats[gameName] = struct {
+			files int
+			size  int64
+		}{gameFiles, gameSize}
+
+		totalFiles += gameFiles
+		totalSize += gameSize
+	}
+
+	fmt.Printf("\n%s[OVERALL]%s\n", ColorBold, ColorReset)
+	fmt.Printf("  Total Files: %s%d%s\n", ColorYellow, totalFiles, ColorReset)
+	fmt.Printf("  Total Size:  %s%s%s\n", ColorYellow, formatSize(totalSize), ColorReset)
+
+	fmt.Printf("\n%s[BY GAME]%s\n", ColorBold, ColorReset)
+	for gameName, stats := range gameStats {
+		fmt.Printf("  %s%s%s\n", ColorCyan, gameName, ColorReset)
+		fmt.Printf("    Files: %d\n", stats.files)
+		fmt.Printf("    Size:  %s\n", formatSize(stats.size))
+	}
+
+	fmt.Printf("\n%s%s\n", strings.Repeat("=", 100), ColorReset)
 }
