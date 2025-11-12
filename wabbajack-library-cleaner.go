@@ -102,15 +102,13 @@ type Modlist struct {
 type ModlistInfo struct {
 	FilePath    string
 	Name        string
-	IsActive    bool
 	ModCount    int
 	UsedModKeys map[string]bool // ModID-based keys for quick lookup
 }
 
 // OrphanedMod represents a mod file that's not used by any active modlist
 type OrphanedMod struct {
-	File          ModFile
-	EstimatedFrom string // Which modlist it likely came from (if deleted)
+	File ModFile
 }
 
 var config Config
@@ -1305,7 +1303,6 @@ func parseWabbajackFile(filePath string) (*ModlistInfo, error) {
 	info := &ModlistInfo{
 		FilePath:    filePath,
 		Name:        modlist.Name,
-		IsActive:    true, // Will be determined by user selection
 		ModCount:    len(modlist.Archives),
 		UsedModKeys: usedModKeys,
 	}
@@ -1373,8 +1370,7 @@ func detectOrphanedMods(modFiles []ModFile, activeModlists []*ModlistInfo) (used
 			used = append(used, modFile)
 		} else {
 			orphaned = append(orphaned, OrphanedMod{
-				File:          modFile,
-				EstimatedFrom: "Unknown",
+				File: modFile,
 			})
 		}
 	}
