@@ -28,7 +28,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -262,24 +261,6 @@ func printMenu() {
 func waitForExit() {
 	fmt.Printf("\n%sPress Enter to exit...%s", ColorYellow, ColorReset)
 	bufio.NewReader(os.Stdin).ReadBytes('\n')
-}
-
-func enableWindowsColors() {
-	// Enable ANSI color support on Windows 10+
-	kernel32 := syscall.NewLazyDLL("kernel32.dll")
-	setConsoleMode := kernel32.NewProc("SetConsoleMode")
-	
-	var mode uint32
-	handle := syscall.Handle(os.Stdout.Fd())
-	
-	// Get current console mode
-	syscall.GetConsoleMode(handle, &mode)
-	
-	// Enable VIRTUAL_TERMINAL_PROCESSING (0x0004)
-	mode |= 0x0004
-	
-	// Set new console mode
-	setConsoleMode.Call(uintptr(handle), uintptr(mode))
 }
 
 func getGameFolders(baseDir string) ([]string, error) {
