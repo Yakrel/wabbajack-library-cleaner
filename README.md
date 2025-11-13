@@ -111,12 +111,9 @@ Coming soon! (GUI screenshots will be added after build)
   - Install via: `choco install mingw` or `winget install -e --id jmeubank.tdm-gcc`
   - Or download from: [TDM-GCC](https://jmeubank.github.io/tdm-gcc/download/)
 
-**Build Command:**
+**Build Commands:**
 ```bash
-# Set CGO_ENABLED for GUI compilation
 set CGO_ENABLED=1
-
-# Build with icon and no console window
 go build -ldflags="-s -w -H=windowsgui" -o wabbajack-library-cleaner.exe
 ```
 
