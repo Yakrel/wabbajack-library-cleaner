@@ -50,19 +50,19 @@ func TestParseModFilename(t *testing.T) {
 			wantValid:  true,
 		},
 		{
-			name:       "Invalid filename - no ModID",
-			filename:   "NoModID-1234567890.7z",
-			wantValid:  false,
+			name:      "Invalid filename - no ModID",
+			filename:  "NoModID-1234567890.7z",
+			wantValid: false,
 		},
 		{
-			name:       "Invalid filename - no timestamp",
-			filename:   "Mod-123-1-0.7z",
-			wantValid:  false,
+			name:      "Invalid filename - no timestamp",
+			filename:  "Mod-123-1-0.7z",
+			wantValid: false,
 		},
 		{
-			name:       "Invalid filename - wrong extension",
-			filename:   "Mod-123-1-0-1234567890.txt",
-			wantValid:  false,
+			name:      "Invalid filename - wrong extension",
+			filename:  "Mod-123-1-0-1234567890.txt",
+			wantValid: false,
 		},
 	}
 
@@ -96,7 +96,7 @@ func TestDetectOrphanedMods(t *testing.T) {
 	modFiles := []ModFile{
 		{ModID: "123", FileID: "456", FileName: "mod1.7z"},
 		{ModID: "123", FileID: "789", FileName: "mod2.7z"}, // Different FileID, same ModID
-		{ModID: "999", FileID: "", FileName: "mod3.7z"},     // No FileID
+		{ModID: "999", FileID: "", FileName: "mod3.7z"},    // No FileID
 		{ModID: "888", FileID: "111", FileName: "mod4.7z"},
 	}
 
