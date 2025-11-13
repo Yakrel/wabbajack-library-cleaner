@@ -103,11 +103,21 @@ All output appears in the scrollable text area at the bottom.
 
 ### Compile from Source (Optional)
 
-**Requirements:** Go 1.25 or later ([Download](https://go.dev/dl/))
+**Requirements:** Go 1.21 or later ([Download](https://go.dev/dl/))
 
 ```bash
 go build -ldflags="-s -w" -o wabbajack-library-cleaner.exe
 ```
+
+### Testing
+
+Run the test suite to verify functionality:
+
+```bash
+go test -v ./...
+```
+
+See [TESTING.md](TESTING.md) for detailed testing instructions.
 
 ## ️ Mod File Naming Convention
 
