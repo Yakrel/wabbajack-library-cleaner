@@ -123,17 +123,6 @@ func main() {
 		}
 	}()
 
-	// Check if running in CLI mode (with arguments) or GUI mode
-	if len(os.Args) > 1 && os.Args[1] == "--cli" {
-		// Run CLI mode
-		runCLI()
-	} else {
-		// Run GUI mode
-		runGUI()
-	}
-}
-
-func runGUI() {
 	// Catch panics in GUI mode
 	defer func() {
 		if r := recover(); r != nil {
@@ -141,132 +130,9 @@ func runGUI() {
 		}
 	}()
 
+	// Run GUI (Windows only)
 	guiApp := NewGUIApp()
 	guiApp.Run()
-}
-
-func runCLI() {
-	// Enable ANSI colors on Windows
-	enableWindowsColors()
-
-	// Catch panics only
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Printf("\n%s[PANIC]%s Program crashed: %v\n", ColorRed, ColorReset, r)
-			fmt.Printf("\n%sPress Enter to exit...%s", ColorYellow, ColorReset)
-			bufio.NewReader(os.Stdin).ReadBytes('\n')
-		}
-	}()
-
-	baseDir, err := os.Getwd()
-	if err != nil {
-		fmt.Printf("%s[ERROR]%s Failed to get working directory: %v\n", ColorRed, ColorReset, err)
-		logError("Failed to get working directory: %v", err)
-		waitForExit()
-		return
-	}
-
-	logInfo("Program started in directory: %s", baseDir)
-
-	fmt.Printf("%s%sWorking directory: %s%s\n", ColorBold, ColorCyan, baseDir, ColorReset)
-
-	gameFolders, err := getGameFolders(baseDir)
-	if err != nil {
-		fmt.Printf("%s[ERROR]%s %v\n", ColorRed, ColorReset, err)
-		waitForExit()
-		return
-	}
-
-	// Check if we're inside a mod folder (no subfolders, but many archives)
-	if len(gameFolders) == 0 {
-		archiveCount := countArchivesInDir(baseDir)
-		if archiveCount > 10 {
-			fmt.Printf("\n%s[WARNING]%s It looks like you're inside a mod archives folder!\n", ColorYellow, ColorReset)
-			fmt.Printf("Found %d archive files in current directory.\n\n", archiveCount)
-			fmt.Printf("This tool is designed to scan multiple game mod folders at once.\n")
-			fmt.Printf("Recommended: Place it in the parent directory.\n")
-			fmt.Printf("  Example: %sF:\\Wabbajack\\%s (not inside F:\\Wabbajack\\Skyrim\\)\n\n", ColorCyan, ColorReset)
-
-			fmt.Printf("Would you like to clean THIS folder anyway? (yes/no): ")
-			scanner := bufio.NewScanner(os.Stdin)
-			if scanner.Scan() && confirmInput(scanner.Text()) {
-				// Add current directory as the only folder with a clear name
-				gameFolders = append(gameFolders, baseDir)
-				fmt.Printf("\n%s[OK]%s Processing current directory...\n", ColorGreen, ColorReset)
-				logInfo("User chose to clean current directory: %s", baseDir)
-			} else {
-				fmt.Printf("\n%s[INFO]%s Please move the tool to the correct directory and run again.\n", ColorCyan, ColorReset)
-				logInfo("User declined to clean current directory")
-				waitForExit()
-				return
-			}
-		} else {
-			fmt.Printf("\n%s[ERROR]%s No game mod folders found in this directory!\n", ColorRed, ColorReset)
-			fmt.Printf("\n%s[INFO]%s This tool should be run from your Wabbajack downloads directory.\n", ColorCyan, ColorReset)
-			fmt.Printf("\n%sExpected directory structure:%s\n", ColorBold, ColorReset)
-			fmt.Printf("  %sF:\\Wabbajack\\%s                    %s<-- Run the tool here%s\n", ColorCyan, ColorReset, ColorGreen, ColorReset)
-			fmt.Printf("  ├─ Skyrim\\                     %s<-- Mod archives for Skyrim%s\n", ColorYellow, ColorReset)
-			fmt.Printf("  │  ├─ ModName_v1.0.7z\n")
-			fmt.Printf("  │  ├─ ModName_v1.1.7z\n")
-			fmt.Printf("  │  └─ ...\n")
-			fmt.Printf("  ├─ Fallout4\\                   %s<-- Mod archives for Fallout 4%s\n", ColorYellow, ColorReset)
-			fmt.Printf("  └─ [other game folders]\\\n\n")
-			fmt.Printf("%s[!] Note:%s These are NOT your game installation folders!\n", ColorYellow, ColorReset)
-			fmt.Printf("    They are folders containing downloaded mod archives (.7z, .zip, etc.)\n\n")
-			fmt.Printf("Current directory: %s%s%s\n", ColorYellow, baseDir, ColorReset)
-			fmt.Printf("\nPlease navigate to the correct directory and try again.\n")
-			logInfo("No game folders found in: %s", baseDir)
-			waitForExit()
-			return
-		}
-	}
-
-	if len(gameFolders) > 0 {
-		fmt.Printf("%s[OK]%s Found %d game folder(s):\n", ColorGreen, ColorReset, len(gameFolders))
-		for i, folder := range gameFolders {
-			fmt.Printf("  %d. %s\n", i+1, filepath.Base(folder))
-		}
-	}
-
-	// Main menu loop
-	scanner := bufio.NewScanner(os.Stdin)
-	for {
-		printMenu()
-		fmt.Print("\nSelect option (1-6): ")
-
-		if !scanner.Scan() {
-			break
-		}
-
-		choice := strings.TrimSpace(scanner.Text())
-
-		switch choice {
-		case "1":
-			// Scan folder - Dry run
-			scanSpecificFolder(gameFolders, scanner, false)
-		case "2":
-			// Delete from specific folder
-			scanSpecificFolder(gameFolders, scanner, true)
-		case "3":
-			// Scan for orphaned mods - Dry run
-			scanOrphanedMods(baseDir, gameFolders, scanner, false)
-		case "4":
-			// Clean orphaned mods
-			scanOrphanedMods(baseDir, gameFolders, scanner, true)
-		case "5":
-			// View statistics
-			viewStatistics(gameFolders)
-		case "6":
-			fmt.Printf("\n%sGoodbye!%s\n", ColorCyan, ColorReset)
-			logInfo("Program exited by user")
-			return
-		default:
-			fmt.Printf("%s[ERROR]%s Invalid option!\n", ColorRed, ColorReset)
-		}
-
-		fmt.Printf("\n%sPress Enter to continue...%s", ColorBlue, ColorReset)
-		scanner.Scan()
-	}
 }
 
 func printMenu() {

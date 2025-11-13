@@ -29,16 +29,20 @@ import (
 
 // GUIApp holds the GUI application state
 type GUIApp struct {
-	app             fyne.App
-	window          fyne.Window
-	wabbajackDir    string
-	downloadsDir    string
-	useRecycleBin   bool
-	outputText      *widget.Entry
-	statusLabel     *widget.Label
-	wabbajackLabel  *widget.Label
-	downloadsLabel  *widget.Label
-	recycleBinCheck *widget.Check
+	app              fyne.App
+	window           fyne.Window
+	wabbajackDir     string
+	downloadsDir     string
+	useRecycleBin    bool
+	modlistInfos     []*ModlistInfo
+	modlistChecks    []*widget.Check
+	outputText       *widget.Entry
+	statusLabel      *widget.Label
+	wabbajackLabel   *widget.Label
+	downloadsLabel   *widget.Label
+	recycleBinCheck  *widget.Check
+	modlistContainer *fyne.Container
+	actionsContainer *fyne.Container
 }
 
 // NewGUIApp creates and initializes the GUI application
@@ -60,35 +64,49 @@ func NewGUIApp() *GUIApp {
 func (g *GUIApp) setupUI() {
 	// Title
 	title := widget.NewLabelWithStyle(
-		"Wabbajack Library Cleaner",
+		"Wabbajack Library Cleaner v2.0",
 		fyne.TextAlignCenter,
 		fyne.TextStyle{Bold: true},
 	)
+	subtitle := widget.NewLabelWithStyle(
+		"Clean orphaned mods and old versions from your Wabbajack downloads",
+		fyne.TextAlignCenter,
+		fyne.TextStyle{},
+	)
 
-	// Directory selection section
-	g.wabbajackLabel = widget.NewLabel("Wabbajack Directory: (Not selected)")
-	selectWabbajackBtn := widget.NewButton("Select Wabbajack Directory", func() {
+	// Step 1: Modlist folder selection
+	g.wabbajackLabel = widget.NewLabel("Modlist Folder: (Not selected)")
+	selectWabbajackBtn := widget.NewButton("📁 Select Modlist Folder", func() {
 		g.selectWabbajackDir()
 	})
 
-	g.downloadsLabel = widget.NewLabel("Downloads Directory: (Not selected)")
-	selectDownloadsBtn := widget.NewButton("Select Downloads Directory", func() {
+	// Modlist checkboxes container (initially hidden)
+	g.modlistContainer = container.NewVBox()
+
+	dirSection1 := container.NewVBox(
+		widget.NewLabelWithStyle("Step 1: Select Modlist Folder", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewLabel("Select the folder containing your .wabbajack files (e.g., F:\\Wabbajack\\downloads_modlist)"),
+		g.wabbajackLabel,
+		selectWabbajackBtn,
+		g.modlistContainer,
+	)
+
+	// Step 2: Downloads folder selection
+	g.downloadsLabel = widget.NewLabel("Downloads Folder: (Not selected)")
+	selectDownloadsBtn := widget.NewButton("📁 Select Downloads Folder", func() {
 		g.selectDownloadsDir()
 	})
 
-	dirSection := container.NewVBox(
-		widget.NewLabelWithStyle("Step 1: Select Directories", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		widget.NewLabel("Select the directory containing .wabbajack files:"),
-		g.wabbajackLabel,
-		selectWabbajackBtn,
+	dirSection2 := container.NewVBox(
 		widget.NewSeparator(),
-		widget.NewLabel("Select the directory containing game mod folders (Skyrim, Fallout4, etc.):"),
+		widget.NewLabelWithStyle("Step 2: Select Downloads Folder", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewLabel("Select the folder containing your mod archives (game folders like Skyrim, Fallout4, etc.)"),
 		g.downloadsLabel,
 		selectDownloadsBtn,
 	)
 
-	// Options section
-	g.recycleBinCheck = widget.NewCheck("Send deleted files to Recycle Bin (instead of permanent deletion)", func(checked bool) {
+	// Step 3: Options
+	g.recycleBinCheck = widget.NewCheck("🗑️ Send deleted files to Recycle Bin (safer - can be restored)", func(checked bool) {
 		g.useRecycleBin = checked
 	})
 	g.recycleBinCheck.SetChecked(true) // Default to recycle bin for safety
@@ -96,42 +114,53 @@ func (g *GUIApp) setupUI() {
 
 	optionsSection := container.NewVBox(
 		widget.NewSeparator(),
-		widget.NewLabelWithStyle("Step 2: Options", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewLabelWithStyle("Step 3: Deletion Options", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		g.recycleBinCheck,
 	)
 
-	// Action buttons section
-	scanOldVersionsBtn := widget.NewButton("Scan for Old Versions (Dry-run)", func() {
+	// Step 4: Action buttons (PRIMARY: Orphaned Mods, SECONDARY: Old Versions)
+	// Primary Actions - Orphaned Mods Cleanup
+	scanOrphanedBtn := widget.NewButton("🔍 Scan for Orphaned Mods (Preview)", func() {
+		g.scanOrphanedMods(false)
+	})
+	scanOrphanedBtn.Importance = widget.HighImportance
+
+	cleanOrphanedBtn := widget.NewButton("🧹 Clean Orphaned Mods", func() {
+		g.scanOrphanedMods(true)
+	})
+	cleanOrphanedBtn.Importance = widget.HighImportance
+
+	// Secondary Actions - Old Versions Cleanup
+	scanOldVersionsBtn := widget.NewButton("🔍 Scan for Old Versions (Preview)", func() {
 		g.scanOldVersions(false)
 	})
 
-	cleanOldVersionsBtn := widget.NewButton("Clean Old Versions", func() {
+	cleanOldVersionsBtn := widget.NewButton("🧹 Clean Old Versions", func() {
 		g.scanOldVersions(true)
 	})
 
-	scanOrphanedBtn := widget.NewButton("Scan for Orphaned Mods (Dry-run)", func() {
-		g.scanOrphanedMods(false)
-	})
-
-	cleanOrphanedBtn := widget.NewButton("Clean Orphaned Mods", func() {
-		g.scanOrphanedMods(true)
-	})
-
-	statsBtn := widget.NewButton("View Statistics", func() {
+	// Other Actions
+	statsBtn := widget.NewButton("📊 View Statistics", func() {
 		g.viewStats()
 	})
 
-	actionsSection := container.NewVBox(
+	g.actionsContainer = container.NewVBox(
 		widget.NewSeparator(),
-		widget.NewLabelWithStyle("Step 3: Actions", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		container.NewGridWithColumns(2,
-			scanOldVersionsBtn,
-			cleanOldVersionsBtn,
-		),
+		widget.NewLabelWithStyle("Step 4: Cleanup Actions", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewLabelWithStyle("PRIMARY: Orphaned Mods Cleanup", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewLabel("Remove mods not used by selected modlists (major space savings)"),
 		container.NewGridWithColumns(2,
 			scanOrphanedBtn,
 			cleanOrphanedBtn,
 		),
+		widget.NewSeparator(),
+		widget.NewLabelWithStyle("SECONDARY: Old Versions Cleanup", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewLabel("⚠️ Warning: Some modlists may require old versions! Check carefully before cleaning."),
+		container.NewGridWithColumns(2,
+			scanOldVersionsBtn,
+			cleanOldVersionsBtn,
+		),
+		widget.NewSeparator(),
 		statsBtn,
 	)
 
@@ -159,10 +188,12 @@ func (g *GUIApp) setupUI() {
 	// Main layout
 	content := container.NewVBox(
 		title,
+		subtitle,
 		widget.NewSeparator(),
-		dirSection,
+		dirSection1,
+		dirSection2,
 		optionsSection,
-		actionsSection,
+		g.actionsContainer,
 		outputSection,
 		widget.NewSeparator(),
 		g.statusLabel,
@@ -187,7 +218,7 @@ func (g *GUIApp) setStatus(text string) {
 	g.statusLabel.SetText(text)
 }
 
-// selectWabbajackDir opens a dialog to select the wabbajack directory
+// selectWabbajackDir opens a dialog to select the wabbajack directory and auto-scans for modlists
 func (g *GUIApp) selectWabbajackDir() {
 	dialog.ShowFolderOpen(func(uri fyne.ListableURI, err error) {
 		if err != nil {
@@ -198,10 +229,84 @@ func (g *GUIApp) selectWabbajackDir() {
 			return
 		}
 		g.wabbajackDir = uri.Path()
-		g.wabbajackLabel.SetText("Wabbajack Directory: " + g.wabbajackDir)
-		g.appendOutput("Selected wabbajack directory: " + g.wabbajackDir)
+		g.wabbajackLabel.SetText("Modlist Folder: " + g.wabbajackDir)
+		g.appendOutput("\n=== Scanning for Modlists ===")
+		g.appendOutput("Selected modlist folder: " + g.wabbajackDir)
 		logInfo("User selected wabbajack directory: %s", g.wabbajackDir)
+
+		// Auto-scan for .wabbajack files
+		g.scanAndDisplayModlists()
 	}, g.window)
+}
+
+// scanAndDisplayModlists scans the selected folder for .wabbajack files and displays checkboxes
+func (g *GUIApp) scanAndDisplayModlists() {
+	g.setStatus("Scanning for modlists...")
+
+	// Find wabbajack files
+	wabbajackFiles, err := findWabbajackFiles(g.wabbajackDir)
+	if err != nil || len(wabbajackFiles) == 0 {
+		g.appendOutput("❌ No .wabbajack files found in this folder")
+		g.setStatus("No modlists found")
+		dialog.ShowError(fmt.Errorf("No .wabbajack files found in: %s", g.wabbajackDir), g.window)
+		return
+	}
+
+	g.appendOutput(fmt.Sprintf("Found %d modlist file(s)", len(wabbajackFiles)))
+
+	// Parse modlists
+	g.modlistInfos = nil
+	for _, wbFile := range wabbajackFiles {
+		info, err := parseWabbajackFile(wbFile)
+		if err != nil {
+			g.appendOutput(fmt.Sprintf("⚠️ Failed to parse %s: %v", filepath.Base(wbFile), err))
+			logError("Failed to parse %s: %v", wbFile, err)
+			continue
+		}
+		g.appendOutput(fmt.Sprintf("  ✓ %s (%d mods)", info.Name, info.ModCount))
+		g.modlistInfos = append(g.modlistInfos, info)
+	}
+
+	if len(g.modlistInfos) == 0 {
+		g.appendOutput("❌ Failed to parse any modlist files")
+		g.setStatus("Failed to parse modlists")
+		dialog.ShowError(fmt.Errorf("Failed to parse any modlist files"), g.window)
+		return
+	}
+
+	// Create checkboxes for each modlist
+	g.modlistContainer.Objects = nil
+	g.modlistChecks = nil
+
+	g.modlistContainer.Add(widget.NewSeparator())
+	g.modlistContainer.Add(widget.NewLabelWithStyle("Select Active Modlists:", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}))
+	g.modlistContainer.Add(widget.NewLabel("Check the modlists you are currently using:"))
+
+	for _, info := range g.modlistInfos {
+		check := widget.NewCheck(fmt.Sprintf("%s (%d mods)", info.Name, info.ModCount), nil)
+		check.SetChecked(true) // Default to all selected
+		g.modlistChecks = append(g.modlistChecks, check)
+		g.modlistContainer.Add(check)
+	}
+
+	// Add select all/none buttons
+	buttonRow := container.NewGridWithColumns(2,
+		widget.NewButton("Select All", func() {
+			for _, check := range g.modlistChecks {
+				check.SetChecked(true)
+			}
+		}),
+		widget.NewButton("Deselect All", func() {
+			for _, check := range g.modlistChecks {
+				check.SetChecked(false)
+			}
+		}),
+	)
+	g.modlistContainer.Add(buttonRow)
+
+	g.modlistContainer.Refresh()
+	g.setStatus(fmt.Sprintf("Found %d modlists - select which ones you're using", len(g.modlistInfos)))
+	g.appendOutput("\n✅ Modlists loaded! Select the ones you're currently using, then proceed to Step 2.")
 }
 
 // selectDownloadsDir opens a dialog to select the downloads directory
@@ -223,11 +328,30 @@ func (g *GUIApp) selectDownloadsDir() {
 
 // validateDirectories checks if required directories are selected
 func (g *GUIApp) validateDirectories() bool {
+	if g.wabbajackDir == "" {
+		dialog.ShowError(fmt.Errorf("Please select the Modlist Folder first (Step 1)"), g.window)
+		return false
+	}
 	if g.downloadsDir == "" {
-		dialog.ShowError(fmt.Errorf("Please select the Downloads Directory first"), g.window)
+		dialog.ShowError(fmt.Errorf("Please select the Downloads Folder first (Step 2)"), g.window)
+		return false
+	}
+	if len(g.modlistInfos) == 0 {
+		dialog.ShowError(fmt.Errorf("No modlists found. Please select a folder containing .wabbajack files"), g.window)
 		return false
 	}
 	return true
+}
+
+// getSelectedModlists returns the modlists that are checked
+func (g *GUIApp) getSelectedModlists() []*ModlistInfo {
+	var selected []*ModlistInfo
+	for i, check := range g.modlistChecks {
+		if check.Checked && i < len(g.modlistInfos) {
+			selected = append(selected, g.modlistInfos[i])
+		}
+	}
+	return selected
 }
 
 // scanOldVersions handles old version scanning/cleaning
@@ -356,127 +480,33 @@ func (g *GUIApp) performOldVersionScan(folderPath string, deleteMode bool) {
 	}
 }
 
-// scanOrphanedMods handles orphaned mods scanning/cleaning
+// scanOrphanedMods handles orphaned mods scanning/cleaning using pre-selected modlists
 func (g *GUIApp) scanOrphanedMods(deleteMode bool) {
 	if !g.validateDirectories() {
 		return
 	}
 
-	if g.wabbajackDir == "" {
-		dialog.ShowError(fmt.Errorf("Please select the Wabbajack Directory first"), g.window)
+	// Get selected modlists
+	activeModlists := g.getSelectedModlists()
+	if len(activeModlists) == 0 {
+		dialog.ShowError(fmt.Errorf("Please select at least one modlist in Step 1"), g.window)
 		return
 	}
 
 	g.setStatus("Scanning for orphaned mods...")
 	g.appendOutput("\n=== Scanning for Orphaned Mods ===")
-
-	// Find wabbajack files
-	wabbajackFiles, err := findWabbajackFiles(g.wabbajackDir)
-	if err != nil || len(wabbajackFiles) == 0 {
-		dialog.ShowError(fmt.Errorf("No .wabbajack files found in: %s", g.wabbajackDir), g.window)
-		g.setStatus("Error: No wabbajack files found")
-		return
+	g.appendOutput(fmt.Sprintf("Using %d selected modlist(s):", len(activeModlists)))
+	for _, ml := range activeModlists {
+		g.appendOutput(fmt.Sprintf("  ✓ %s", ml.Name))
 	}
 
-	g.appendOutput(fmt.Sprintf("Found %d modlist file(s)", len(wabbajackFiles)))
-
-	// Parse modlists
-	var modlistInfos []*ModlistInfo
-	for _, wbFile := range wabbajackFiles {
-		info, err := parseWabbajackFile(wbFile)
-		if err != nil {
-			g.appendOutput(fmt.Sprintf("Failed to parse %s: %v", filepath.Base(wbFile), err))
-			continue
-		}
-		g.appendOutput(fmt.Sprintf("  ✓ %s (%d mods)", info.Name, info.ModCount))
-		modlistInfos = append(modlistInfos, info)
-	}
-
-	if len(modlistInfos) == 0 {
-		dialog.ShowError(fmt.Errorf("Failed to parse any modlist files"), g.window)
-		g.setStatus("Error: No valid modlists")
-		return
-	}
-
-	// Show modlist selection dialog
-	g.showModlistSelection(modlistInfos, deleteMode)
+	// Perform the scan
+	g.performOrphanedScan(activeModlists, deleteMode)
 }
 
 // showModlistSelection shows a dialog to select active modlists
-func (g *GUIApp) showModlistSelection(modlistInfos []*ModlistInfo, deleteMode bool) {
-	checks := make([]*widget.Check, len(modlistInfos))
-	checkBoxes := container.NewVBox()
-
-	for i, info := range modlistInfos {
-		idx := i
-		checks[i] = widget.NewCheck(fmt.Sprintf("%s (%d mods)", info.Name, info.ModCount), nil)
-		checkBoxes.Add(checks[idx])
-	}
-
-	selectAllBtn := widget.NewButton("Select All", func() {
-		for _, check := range checks {
-			check.SetChecked(true)
-		}
-	})
-
-	deselectAllBtn := widget.NewButton("Deselect All", func() {
-		for _, check := range checks {
-			check.SetChecked(false)
-		}
-	})
-
-	buttonRow := container.NewGridWithColumns(2, selectAllBtn, deselectAllBtn)
-
-	content := container.NewVBox(
-		widget.NewLabel("Select which modlists you are CURRENTLY USING:"),
-		widget.NewSeparator(),
-		checkBoxes,
-		widget.NewSeparator(),
-		buttonRow,
-	)
-
-	scrollContent := container.NewScroll(content)
-	scrollContent.SetMinSize(fyne.NewSize(400, 300))
-
-	confirmDialog := dialog.NewCustomConfirm(
-		"Select Active Modlists",
-		"Continue",
-		"Cancel",
-		scrollContent,
-		func(confirmed bool) {
-			if !confirmed {
-				g.setStatus("Cancelled")
-				return
-			}
-
-			// Get selected modlists
-			var activeModlists []*ModlistInfo
-			for i, check := range checks {
-				if check.Checked {
-					activeModlists = append(activeModlists, modlistInfos[i])
-				}
-			}
-
-			if len(activeModlists) == 0 {
-				dialog.ShowError(fmt.Errorf("Please select at least one modlist"), g.window)
-				return
-			}
-
-			g.performOrphanedScan(activeModlists, deleteMode)
-		},
-		g.window,
-	)
-	confirmDialog.Resize(fyne.NewSize(500, 500))
-	confirmDialog.Show()
-}
-
 // performOrphanedScan performs the actual orphaned mods scan
 func (g *GUIApp) performOrphanedScan(activeModlists []*ModlistInfo, deleteMode bool) {
-	g.appendOutput("\nActive modlists:")
-	for _, ml := range activeModlists {
-		g.appendOutput("  ✓ " + ml.Name)
-	}
-
 	// Get game folders
 	gameFolders, err := getGameFolders(g.downloadsDir)
 	if err != nil {
