@@ -7,31 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 2.0.0 - 2025-11-13
 
+### Major Changes
+- **🖼️ Windows-Only GUI Application** - Complete rewrite as a GUI-only Windows application
+- **🚫 CLI Mode Removed** - Simplified to GUI only (Wabbajack is Windows-only anyway)
+- **🎯 Orphaned Mods = PRIMARY Feature** - Old versions cleanup is now secondary
+- **📁 Simplified Workflow** - Step-by-step process that's easier to understand
+
 ### Added
-- **NEW: Graphical User Interface (GUI)** - Complete GUI rewrite with user-friendly interface
-  - Folder selection dialogs for wabbajack files and mod downloads
-  - No longer depends on working directory - select any folder
-  - Visual output area with real-time progress
-  - Status bar showing current operation
-  - Clean, modern interface built with Fyne
-- **NEW: Recycle Bin Support** - Option to send deleted files to Recycle Bin instead of permanent deletion
+- **NEW: Auto-Scanning Modlists** - Select folder → Tool automatically scans for .wabbajack files
+  - Shows checkboxes for each found modlist
+  - All modlists selected by default
+  - "Select All" / "Deselect All" buttons
+  - No more separate dialogs - everything in one place
+- **NEW: Checkbox Modlist Selection** - Select which modlists you're currently using
+  - Check/uncheck modlists directly in the main window
+  - Clear visual indication of selected modlists
+  - Selected modlists used for orphaned mods detection
+- **NEW: Recycle Bin Support** - Files go to Recycle Bin by default
   - Checkbox to toggle between Recycle Bin and permanent deletion
-  - Default to Recycle Bin for safety
+  - Default: Recycle Bin (safer - can be restored)
   - Windows native implementation using SHFileOperation
-  - Files can be restored from Recycle Bin if needed
-- **NEW: Flexible Path Selection** - Select directories from anywhere on your system
-  - Browse for wabbajack directory containing `.wabbajack` files
-  - Browse for downloads directory containing game mod folders
-  - No need to place executable in specific location
-- **NEW: CLI Mode** - Command-line interface still available with `--cli` flag
-  - Run `wabbajack-library-cleaner.exe --cli` for terminal interface
-  - All existing CLI functionality preserved
-- All features from v1.0.2 preserved and enhanced in GUI
+- **NEW: Reorganized UI** - Primary and Secondary features clearly separated
+  - PRIMARY: Orphaned Mods Cleanup (highlighted with high importance)
+  - SECONDARY: Old Versions Cleanup (with warning about compatibility)
+  - Warning labels about modlists requiring old versions
+  - Emojis for better visual navigation (🔍, 🧹, 📁, 🗑️, ⚠️, etc.)
+- **NEW: Simplified Directory Selection** - Only two folders needed
+  - Step 1: Modlist folder (contains all .wabbajack files)
+  - Step 2: Downloads folder (contains game mod folders)
+- All features from v1.0.2 preserved and enhanced
+
+### Removed
+- **CLI Mode Completely Removed** - GUI-only application now
+  - Simplified codebase
+  - Better user experience
+  - Windows-only focus (Wabbajack is Windows-only)
 
 ### Changed
-- GUI mode is now the default when running the executable
-- CLI mode requires `--cli` flag to activate
+- Main workflow completely redesigned for better UX
+- Modlist selection now happens in Step 1 (not in a separate dialog)
+- Actions reorganized to emphasize orphaned mods cleanup
 - Enhanced safety with Recycle Bin as default deletion method
+- Better status messages and output formatting
 
 ### Technical Details
 - Added `fyne.io/fyne/v2` for cross-platform GUI framework
