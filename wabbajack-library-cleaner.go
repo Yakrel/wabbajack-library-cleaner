@@ -121,7 +121,9 @@ func main() {
 	initLogging()
 	defer func() {
 		if config.LogFile != nil {
-			config.LogFile.Close()
+			if err := config.LogFile.Close(); err != nil {
+				logError("Failed to close log file: %v", err)
+			}
 		}
 	}()
 
@@ -247,8 +249,8 @@ func parseModFilename(filename string) *ModFile {
 
 	if modIDIndex+1 < len(parts)-1 {
 		nextPart := parts[modIDIndex+1]
-		// FileID is typically 4-7 digits and comes right after ModID
-		if isNumeric(nextPart) && len(nextPart) >= 4 && len(nextPart) <= 7 {
+		// FileID is typically 4+ digits and comes right after ModID
+		if isNumeric(nextPart) && len(nextPart) >= 4 {
 			fileID = nextPart
 			fileIDIndex = modIDIndex + 1
 		}
@@ -1310,6 +1312,9 @@ func detectOrphanedMods(modFiles []ModFile, activeModlists []*ModlistInfo) (used
 		// This handles:
 		// 1. Files without FileID in their name
 		// 2. Modlists that only specify ModID without FileID
+		// Safety fallback: If we have a FileID but it doesn't match, we still check ModID-only
+		// to avoid deleting a file that might be a different version of the same mod that the user
+		// manually added or that the modlist might need.
 		if !isUsed && usedModIDs[modFile.ModID] {
 			isUsed = true
 		}

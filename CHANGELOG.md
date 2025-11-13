@@ -51,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better status messages and output formatting
 
 ### Technical Details
-- Added `fyne.io/fyne/v2` for cross-platform GUI framework
+- Added `fyne.io/fyne/v2` GUI framework with Windows-specific features (Windows-only application)
 - New files:
   - `gui.go`: Complete GUI implementation
   - `fileops.go`: File operation helpers

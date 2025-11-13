@@ -2,7 +2,7 @@ name: Test and Build
 
 on:
   push:
-    branches: [ main, pr-3, copilot/add-modlist-cleanup-feature ]
+    branches: [ main, pr-3 ]
   pull_request:
     branches: [ main ]
 

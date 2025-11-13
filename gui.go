@@ -263,7 +263,13 @@ func (g *GUIApp) scanAndDisplayModlists() {
 
 	// Find wabbajack files
 	wabbajackFiles, err := findWabbajackFiles(g.wabbajackDir)
-	if err != nil || len(wabbajackFiles) == 0 {
+	if err != nil {
+		g.appendOutput(fmt.Sprintf("❌ Error scanning folder: %v", err))
+		g.setStatus("Scan error")
+		dialog.ShowError(err, g.window)
+		return
+	}
+	if len(wabbajackFiles) == 0 {
 		g.appendOutput("❌ No .wabbajack files found in this folder")
 		g.setStatus("No modlists found")
 		dialog.ShowError(fmt.Errorf("No .wabbajack files found in: %s", g.wabbajackDir), g.window)
@@ -517,7 +523,7 @@ func (g *GUIApp) scanOrphanedMods(deleteMode bool) {
 	// Get selected modlists
 	activeModlists := g.getSelectedModlists()
 	if len(activeModlists) == 0 {
-		dialog.ShowError(fmt.Errorf("Please select at least one modlist in Step 1"), g.window)
+		dialog.ShowError(fmt.Errorf("No modlists selected. Please check at least one modlist from the list above."), g.window)
 		return
 	}
 
@@ -532,7 +538,6 @@ func (g *GUIApp) scanOrphanedMods(deleteMode bool) {
 	g.performOrphanedScan(activeModlists, deleteMode)
 }
 
-// showModlistSelection shows a dialog to select active modlists
 // performOrphanedScan performs the actual orphaned mods scan
 func (g *GUIApp) performOrphanedScan(activeModlists []*ModlistInfo, deleteMode bool) {
 	// Get game folders
@@ -750,10 +755,15 @@ func (g *GUIApp) deleteModFilesWithRecycleBin(files []ModFile) (int, int64) {
 		// Delete .meta file
 		metaPath := file.FullPath + ".meta"
 		if fileExists(metaPath) {
+			var metaErr error
 			if g.useRecycleBin {
-				moveToRecycleBin(metaPath)
+				metaErr = moveToRecycleBin(metaPath)
 			} else {
-				deleteFile(metaPath)
+				metaErr = deleteFile(metaPath)
+			}
+			if metaErr != nil {
+				g.appendOutput(fmt.Sprintf("⚠ Failed to delete .meta file: %s - %v", filepath.Base(metaPath), metaErr))
+				logWarning("Failed to delete .meta file: %s - %v", metaPath, metaErr)
 			}
 		}
 	}

@@ -48,10 +48,9 @@ type SHFILEOPSTRUCTW struct {
 // moveToRecycleBin moves a file to the Windows Recycle Bin
 func moveToRecycleBin(path string) error {
 	// Convert path to UTF-16 with double null termination
-	from, err := syscall.UTF16PtrFromString(path)
-	if err != nil {
-		return err
-	}
+	pathUTF16 := syscall.StringToUTF16(path)
+	pathUTF16 = append(pathUTF16, 0) // Add extra null terminator
+	from := &pathUTF16[0]
 
 	// Prepare the structure
 	op := SHFILEOPSTRUCTW{
