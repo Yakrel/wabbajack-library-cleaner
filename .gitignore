@@ -12,9 +12,6 @@ wabbajack-cleanup
 # Output of the go coverage tool
 *.out
 
-# Windows resource files (auto-generated)
-*.syso
-
 # Go workspace file
 go.work
 

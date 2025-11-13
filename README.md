@@ -105,11 +105,22 @@ Coming soon! (GUI screenshots will be added after build)
 
 ### Compile from Source (Optional)
 
-**Requirements:** Go 1.21 or later ([Download](https://go.dev/dl/))
+**Requirements:**
+- Go 1.21 or later ([Download](https://go.dev/dl/))
+- MinGW-w64 GCC compiler (for GUI support)
+  - Install via: `choco install mingw` or `winget install -e --id jmeubank.tdm-gcc`
+  - Or download from: [TDM-GCC](https://jmeubank.github.io/tdm-gcc/download/)
 
+**Build Command:**
 ```bash
-go build -ldflags="-s -w" -o wabbajack-library-cleaner.exe
+# Set CGO_ENABLED for GUI compilation
+set CGO_ENABLED=1
+
+# Build with icon and no console window
+go build -ldflags="-s -w -H=windowsgui" -o wabbajack-library-cleaner.exe
 ```
+
+**Note:** The icon is automatically embedded via `rsrc_windows_amd64.syso` (already included in repo).
 
 ## 📋 How It Works
 
