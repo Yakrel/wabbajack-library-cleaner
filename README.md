@@ -48,9 +48,13 @@ This tool scans your downloads folder, identifies duplicate mod versions, and re
 - **Detailed Reports**: See exactly which mods are orphaned and why
 
 ### General
+- **GUI Interface**: User-friendly graphical interface (NEW!)
+- **Flexible Paths**: Select any directory for wabbajack files and mod downloads
+- **Recycle Bin Support**: Option to send files to Recycle Bin instead of permanent deletion (NEW!)
 - **Logging**: All operations are logged
 - **Multi-Game Support**: Works with all game folders (Skyrim, Fallout 4, etc.)
 - **Statistics**: View your mod library statistics by game
+- **CLI Mode**: Command-line interface still available with `--cli` flag
 
 ## 🛡️ Safety Features
 
@@ -63,36 +67,51 @@ This tool scans your downloads folder, identifies duplicate mod versions, and re
 
 ### Orphaned Mods Cleanup
 - Dry-run preview required before deletion
-- Double confirmation with "DELETE" typed in uppercase
+- Confirmation dialog before any deletion
 - Only deletes mods not in any active modlist
 - Shared mods (used by multiple modlists) are protected
 - File lock detection prevents deletion of in-use files
+- **Recycle Bin option**: Choose between permanent deletion or Recycle Bin (Windows)
 
 ## 📖 Usage
 
 ### Installation
 
 1. Download `wabbajack-library-cleaner.exe` from the [Releases](../../releases) page
-2. Place it in your Wabbajack downloads directory (the folder that contains your game folders like Skyrim, Fallout4, etc.)
-3. **For orphaned mods feature:** Place your `.wabbajack` modlist files in the same directory
-4. Run the executable
+2. Double-click to run the program (GUI mode by default)
+3. **No setup required!** - You can place the executable anywhere you want
 
-### Directory Structure
+### GUI Mode (Default)
 
+Simply double-click `wabbajack-library-cleaner.exe` to launch the graphical interface.
+
+**Step 1: Select Directories**
+- Click "Select Wabbajack Directory" to choose where your `.wabbajack` modlist files are located
+- Click "Select Downloads Directory" to choose where your mod archives are stored (folder containing Skyrim, Fallout4, etc.)
+
+**Step 2: Choose Options**
+- Check "Send deleted files to Recycle Bin" if you want to be able to restore files (recommended)
+- Uncheck for permanent deletion (cannot be undone!)
+
+**Step 3: Perform Actions**
+- Use "Scan" buttons to preview what will be deleted (dry-run)
+- Use "Clean" buttons to actually delete files
+- View Statistics to see your library size
+
+All output and progress will be shown in the output area at the bottom of the window.
+
+### CLI Mode (Advanced)
+
+Run with `--cli` flag for command-line interface:
+```bash
+wabbajack-library-cleaner.exe --cli
 ```
-F:\Wabbajack\                          <-- Place the tool here
-├─ wabbajack-library-cleaner.exe
-├─ Uranium Fever.wabbajack             <-- Your modlist files
-├─ FAnomaly.wabbajack
-├─ Skyrim\                             <-- Mod archives for Skyrim
-│  ├─ SkyUI-3863-5-2-1234567890.7z
-│  ├─ SkyUI-3863-5-1-1111111111.7z     <-- Old version (will be detected)
-│  └─ ...
-├─ Fallout4\                           <-- Mod archives for Fallout 4
-└─ [other game folders]\
-```
 
-### Menu Options
+In CLI mode, the tool must be placed in your Wabbajack downloads directory as before.
+
+### CLI Mode Menu Options
+
+When running in CLI mode (`--cli` flag), you get these menu options:
 
 1. **Scan folder (Dry-run)** - Preview old versions to be deleted
 2. **Clean folder** - Delete old versions of mods
@@ -101,62 +120,7 @@ F:\Wabbajack\                          <-- Place the tool here
 5. **View statistics** - Show library statistics by game
 6. **Exit**
 
-### Workflow
-
-#### Cleaning Old Versions
-1. Select option `1` to preview what will be deleted
-2. Review the report
-3. Select option `2` to actually delete old versions
-
-#### Cleaning Orphaned Mods
-1. Ensure your `.wabbajack` files are in the base directory
-2. Select option `3` to scan for orphaned mods
-3. Choose which modlists you're actively using (e.g., `1,2` or `all`)
-4. Review the detailed report showing:
-   - Used mods (safe, needed by your active modlists)
-   - Orphaned mods (not used by any active modlist)
-5. Select option `4` to delete orphaned mods
-6. Type `DELETE` (in uppercase) to confirm
-
-**Example Session:**
-```
-=== MODLIST-BASED CLEANUP ===
-
-[FOUND] Detected 5 modlist file(s):
-  1. Uranium Fever.wabbajack ... [OK] (1,245 mods)
-  2. FAnomaly.wabbajack ... [OK] (892 mods)
-  3. Badlands.wabbajack ... [OK] (1,103 mods)
-  4. ModdingLinked.wabbajack ... [OK] (756 mods)
-  5. Wildlander.wabbajack ... [OK] (2,234 mods)
-
-[SELECT] Which modlists are you CURRENTLY USING?
-Enter numbers separated by commas (e.g., 1,2,3) or 'all': 1,2
-
-[SELECTED] Active modlists:
-  ✓ Uranium Fever
-  ✓ FAnomaly
-
-[SCANNING] Collecting mod files from game folders...
-[OK] Found 2,159 mod files
-
-[ANALYZING] Detecting orphaned mods...
-
-=== RESULTS ===
-
-✓ USED MODS: 1,847 mods (45.2 GB)
-  These mods are used by your active modlist(s):
-    • Uranium Fever
-    • FAnomaly
-
-✗ ORPHANED MODS: 312 mods (23.8 GB)
-  These mods are NOT used by any of your active modlists.
-  They may be from deleted or inactive modlists.
-
-  Examples:
-    • Some Mod-12345-1-0-1234567890.7z (156.3 MB)
-    • Another Mod-67890-2-1-9876543210.7z (89.2 MB)
-    ... and 310 more
-```
+See CLI mode workflow details in [CHANGELOG](CHANGELOG.md).
 
 ### Compile from Source (Optional)
 ```bash
@@ -248,6 +212,8 @@ The orphaned mods feature is particularly effective if you've tried multiple mod
 
 ---
 
-**Current Version:** v1.0.2 (Development)
+**Current Version:** v2.0.0
+
+**Major Update:** Now with GUI interface and Recycle Bin support!
 
 See [CHANGELOG](CHANGELOG.md) for version history.

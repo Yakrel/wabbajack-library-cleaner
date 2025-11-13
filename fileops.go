@@ -13,29 +13,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-//go:build windows
-
 package main
 
 import (
 	"os"
-	"syscall"
 )
 
-func enableWindowsColors() {
-	// Enable ANSI color support on Windows 10+
-	kernel32 := syscall.NewLazyDLL("kernel32.dll")
-	setConsoleMode := kernel32.NewProc("SetConsoleMode")
+// deleteFile permanently deletes a file
+func deleteFile(path string) error {
+	return os.Remove(path)
+}
 
-	var mode uint32
-	handle := syscall.Handle(os.Stdout.Fd())
+// fileExists checks if a file exists
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
 
-	// Get current console mode
-	syscall.GetConsoleMode(handle, &mode)
-
-	// Enable VIRTUAL_TERMINAL_PROCESSING (0x0004)
-	mode |= 0x0004
-
-	// Set new console mode
-	setConsoleMode.Call(uintptr(handle), uintptr(mode))
+// getFilesInFolder returns all entries in a folder
+func getFilesInFolder(path string) ([]os.DirEntry, error) {
+	return os.ReadDir(path)
 }

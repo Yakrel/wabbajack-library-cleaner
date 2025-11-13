@@ -5,10 +5,47 @@ All notable changes to Wabbajack Library Cleaner will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2.0.0 - 2025-11-13
+
+### Added
+- **NEW: Graphical User Interface (GUI)** - Complete GUI rewrite with user-friendly interface
+  - Folder selection dialogs for wabbajack files and mod downloads
+  - No longer depends on working directory - select any folder
+  - Visual output area with real-time progress
+  - Status bar showing current operation
+  - Clean, modern interface built with Fyne
+- **NEW: Recycle Bin Support** - Option to send deleted files to Recycle Bin instead of permanent deletion
+  - Checkbox to toggle between Recycle Bin and permanent deletion
+  - Default to Recycle Bin for safety
+  - Windows native implementation using SHFileOperation
+  - Files can be restored from Recycle Bin if needed
+- **NEW: Flexible Path Selection** - Select directories from anywhere on your system
+  - Browse for wabbajack directory containing `.wabbajack` files
+  - Browse for downloads directory containing game mod folders
+  - No need to place executable in specific location
+- **NEW: CLI Mode** - Command-line interface still available with `--cli` flag
+  - Run `wabbajack-library-cleaner.exe --cli` for terminal interface
+  - All existing CLI functionality preserved
+- All features from v1.0.2 preserved and enhanced in GUI
+
+### Changed
+- GUI mode is now the default when running the executable
+- CLI mode requires `--cli` flag to activate
+- Enhanced safety with Recycle Bin as default deletion method
+
+### Technical Details
+- Added `fyne.io/fyne/v2` for cross-platform GUI framework
+- New files:
+  - `gui.go`: Complete GUI implementation
+  - `fileops.go`: File operation helpers
+  - `recyclebin_windows.go`: Windows Recycle Bin support
+  - `recyclebin_unix.go`: Unix/Linux stub (falls back to regular deletion)
+- Reorganized main() to support both GUI and CLI modes
+
 ## 1.0.2 - 2025-11-12
 
 ### Added
-- **NEW FEATURE: Orphaned Mods Cleanup** - Remove mods not used by any active modlist
+- **FEATURE: Orphaned Mods Cleanup** - Remove mods not used by any active modlist
   - Parses `.wabbajack` files to determine which mods are actually needed
   - Interactive modlist selection (choose which modlists you're actively using)
   - Detailed reporting showing used vs orphaned mods
