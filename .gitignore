@@ -4,6 +4,7 @@
 *.so
 *.dylib
 wabbajack-library-cleaner-test
+wabbajack-cleanup
 
 # Test binary, built with `go test -c`
 *.test

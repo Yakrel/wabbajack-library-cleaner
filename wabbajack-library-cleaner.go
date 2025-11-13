@@ -49,6 +49,7 @@ type ModFile struct {
 	FullPath  string
 	ModName   string
 	ModID     string
+	FileID    string // Optional: FileID for specific file version matching
 	Version   string
 	Timestamp string
 	Size      int64
@@ -99,10 +100,11 @@ type Modlist struct {
 
 // ModlistInfo contains information about a modlist
 type ModlistInfo struct {
-	FilePath    string
-	Name        string
-	ModCount    int
-	UsedModKeys map[string]bool // ModID-based keys for quick lookup
+	FilePath       string
+	Name           string
+	ModCount       int
+	UsedModKeys    map[string]bool // ModID-based keys for quick lookup (backward compatibility)
+	UsedModFileIDs map[string]bool // ModID+FileID combination for precise matching
 }
 
 // OrphanedMod represents a mod file that's not used by any active modlist
@@ -239,16 +241,34 @@ func parseModFilename(filename string) *ModFile {
 		return nil
 	}
 
+	// Try to find FileID (numeric part after ModID, typically 4-7 digits)
+	fileID := ""
+	fileIDIndex := -1
+
+	if modIDIndex+1 < len(parts)-1 {
+		nextPart := parts[modIDIndex+1]
+		// FileID is typically 4-7 digits and comes right after ModID
+		if isNumeric(nextPart) && len(nextPart) >= 4 && len(nextPart) <= 7 {
+			fileID = nextPart
+			fileIDIndex = modIDIndex + 1
+		}
+	}
+
 	// ModName = parts[0:modIDIndex]
 	modName := strings.Join(parts[0:modIDIndex], "-")
 
-	// Version = parts[modIDIndex+1:len-1]
-	version := strings.Join(parts[modIDIndex+1:len(parts)-1], "-")
+	// Version = parts after ModID (and FileID if present) until timestamp
+	versionStartIndex := modIDIndex + 1
+	if fileIDIndex > 0 {
+		versionStartIndex = fileIDIndex + 1
+	}
+	version := strings.Join(parts[versionStartIndex:len(parts)-1], "-")
 
 	return &ModFile{
 		FileName:  filename,
 		ModName:   modName,
 		ModID:     modID,
+		FileID:    fileID,
 		Version:   version,
 		Timestamp: timestamp,
 		IsPatch:   isPatchOrHotfix(filename),
@@ -1182,24 +1202,34 @@ func parseWabbajackFile(filePath string) (*ModlistInfo, error) {
 		return nil, fmt.Errorf("failed to parse modlist JSON: %w", err)
 	}
 
-	// Build a map of used mod keys (ModID-based)
+	// Build maps for used mods (both ModID-only and ModID+FileID)
 	usedModKeys := make(map[string]bool)
+	usedModFileIDs := make(map[string]bool)
+
 	for _, archive := range modlist.Archives {
 		if archive.State.ModID > 0 {
-			// Use ModID as the key for matching
+			// ModID-only key (backward compatibility)
 			modKey := fmt.Sprintf("%d", archive.State.ModID)
 			usedModKeys[modKey] = true
+
+			// ModID+FileID combination key for precise matching
+			if archive.State.FileID > 0 {
+				modFileKey := fmt.Sprintf("%d-%d", archive.State.ModID, archive.State.FileID)
+				usedModFileIDs[modFileKey] = true
+			}
 		}
 	}
 
 	info := &ModlistInfo{
-		FilePath:    filePath,
-		Name:        modlist.Name,
-		ModCount:    len(modlist.Archives),
-		UsedModKeys: usedModKeys,
+		FilePath:       filePath,
+		Name:           modlist.Name,
+		ModCount:       len(modlist.Archives),
+		UsedModKeys:    usedModKeys,
+		UsedModFileIDs: usedModFileIDs,
 	}
 
-	logInfo("Parsed modlist '%s': %d archives, %d unique ModIDs", modlist.Name, len(modlist.Archives), len(usedModKeys))
+	logInfo("Parsed modlist '%s': %d archives, %d unique ModIDs, %d ModID+FileID pairs",
+		modlist.Name, len(modlist.Archives), len(usedModKeys), len(usedModFileIDs))
 	return info, nil
 }
 
@@ -1246,19 +1276,45 @@ func getAllModFiles(gameFolders []string) ([]ModFile, error) {
 
 // detectOrphanedMods compares mod files with active modlists and finds orphaned mods
 func detectOrphanedMods(modFiles []ModFile, activeModlists []*ModlistInfo) (used []ModFile, orphaned []OrphanedMod) {
-	// Build a combined set of all used ModIDs from active modlists
+	// Build combined sets of all used ModIDs and ModID+FileID pairs from active modlists
 	usedModIDs := make(map[string]bool)
+	usedModFileIDs := make(map[string]bool)
+
 	for _, modlist := range activeModlists {
+		// Collect ModID-only keys
 		for modKey := range modlist.UsedModKeys {
 			usedModIDs[modKey] = true
+		}
+		// Collect ModID+FileID combination keys
+		for modFileKey := range modlist.UsedModFileIDs {
+			usedModFileIDs[modFileKey] = true
 		}
 	}
 
 	logInfo("Total unique ModIDs in active modlists: %d", len(usedModIDs))
+	logInfo("Total unique ModID+FileID pairs: %d", len(usedModFileIDs))
 
 	// Classify each mod file
 	for _, modFile := range modFiles {
-		if usedModIDs[modFile.ModID] {
+		isUsed := false
+
+		// First, try precise matching with ModID+FileID if available
+		if modFile.FileID != "" {
+			modFileKey := fmt.Sprintf("%s-%s", modFile.ModID, modFile.FileID)
+			if usedModFileIDs[modFileKey] {
+				isUsed = true
+			}
+		}
+
+		// If no FileID match (or no FileID in file), fall back to ModID-only matching
+		// This handles:
+		// 1. Files without FileID in their name
+		// 2. Modlists that only specify ModID without FileID
+		if !isUsed && usedModIDs[modFile.ModID] {
+			isUsed = true
+		}
+
+		if isUsed {
 			used = append(used, modFile)
 		} else {
 			orphaned = append(orphaned, OrphanedMod{

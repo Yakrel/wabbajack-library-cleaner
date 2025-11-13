@@ -43,6 +43,7 @@ type GUIApp struct {
 	recycleBinCheck  *widget.Check
 	modlistContainer *fyne.Container
 	actionsContainer *fyne.Container
+	progressBar      *widget.ProgressBar
 }
 
 // NewGUIApp creates and initializes the GUI application
@@ -182,8 +183,15 @@ func (g *GUIApp) setupUI() {
 		clearBtn,
 	)
 
-	// Status bar
+	// Status bar and progress
 	g.statusLabel = widget.NewLabel("Ready")
+	g.progressBar = widget.NewProgressBar()
+	g.progressBar.Hide() // Initially hidden
+
+	statusSection := container.NewVBox(
+		g.statusLabel,
+		g.progressBar,
+	)
 
 	// Main layout
 	content := container.NewVBox(
@@ -196,7 +204,7 @@ func (g *GUIApp) setupUI() {
 		g.actionsContainer,
 		outputSection,
 		widget.NewSeparator(),
-		g.statusLabel,
+		statusSection,
 	)
 
 	scrollContent := container.NewScroll(content)
@@ -223,12 +231,22 @@ func (g *GUIApp) selectWabbajackDir() {
 	dialog.ShowFolderOpen(func(uri fyne.ListableURI, err error) {
 		if err != nil {
 			dialog.ShowError(err, g.window)
+			logError("Error selecting wabbajack directory: %v", err)
 			return
 		}
 		if uri == nil {
 			return
 		}
-		g.wabbajackDir = uri.Path()
+
+		// Validate path
+		path := uri.Path()
+		if !isValidPath(path) {
+			dialog.ShowError(fmt.Errorf("invalid directory path"), g.window)
+			logError("Invalid wabbajack directory path: %s", path)
+			return
+		}
+
+		g.wabbajackDir = path
 		g.wabbajackLabel.SetText("Modlist Folder: " + g.wabbajackDir)
 		g.appendOutput("\n=== Scanning for Modlists ===")
 		g.appendOutput("Selected modlist folder: " + g.wabbajackDir)
@@ -314,12 +332,22 @@ func (g *GUIApp) selectDownloadsDir() {
 	dialog.ShowFolderOpen(func(uri fyne.ListableURI, err error) {
 		if err != nil {
 			dialog.ShowError(err, g.window)
+			logError("Error selecting downloads directory: %v", err)
 			return
 		}
 		if uri == nil {
 			return
 		}
-		g.downloadsDir = uri.Path()
+
+		// Validate path
+		path := uri.Path()
+		if !isValidPath(path) {
+			dialog.ShowError(fmt.Errorf("invalid directory path"), g.window)
+			logError("Invalid downloads directory path: %s", path)
+			return
+		}
+
+		g.downloadsDir = path
 		g.downloadsLabel.SetText("Downloads Directory: " + g.downloadsDir)
 		g.appendOutput("Selected downloads directory: " + g.downloadsDir)
 		logInfo("User selected downloads directory: %s", g.downloadsDir)
@@ -678,60 +706,23 @@ func (g *GUIApp) confirmAndDelete(onConfirm func()) {
 	)
 }
 
-// deleteOldVersionsWithRecycleBin deletes old versions with recycle bin option
-func (g *GUIApp) deleteOldVersionsWithRecycleBin(duplicates map[string]*ModGroup) (int, int64) {
+// deleteModFilesWithRecycleBin is a common function to delete mod files with recycle bin option
+func (g *GUIApp) deleteModFilesWithRecycleBin(files []ModFile) (int, int64) {
 	deletedCount := 0
 	spaceFreed := int64(0)
+	totalFiles := len(files)
 
-	for _, group := range duplicates {
-		for i := 0; i < group.NewestIdx; i++ {
-			file := group.Files[i]
-
-			if isFileLocked(file.FullPath) {
-				g.appendOutput(fmt.Sprintf("⚠ Skipped (locked): %s", file.FileName))
-				continue
-			}
-
-			var err error
-			if g.useRecycleBin {
-				err = moveToRecycleBin(file.FullPath)
-			} else {
-				err = deleteFile(file.FullPath)
-			}
-
-			if err != nil {
-				g.appendOutput(fmt.Sprintf("✗ Failed to delete: %s - %v", file.FileName, err))
-				logError("Failed to delete %s: %v", file.FullPath, err)
-				continue
-			}
-
-			deletedCount++
-			spaceFreed += file.Size
-			g.appendOutput(fmt.Sprintf("✓ Deleted: %s (%s)", file.FileName, formatSize(file.Size)))
-			logInfo("Deleted: %s (%s)", file.FileName, formatSize(file.Size))
-
-			// Delete .meta file
-			metaPath := file.FullPath + ".meta"
-			if fileExists(metaPath) {
-				if g.useRecycleBin {
-					moveToRecycleBin(metaPath)
-				} else {
-					deleteFile(metaPath)
-				}
-			}
-		}
+	// Show progress bar if we have files to delete
+	if totalFiles > 0 {
+		g.progressBar.Show()
+		g.progressBar.SetValue(0)
 	}
 
-	return deletedCount, spaceFreed
-}
-
-// deleteOrphanedModsWithRecycleBin deletes orphaned mods with recycle bin option
-func (g *GUIApp) deleteOrphanedModsWithRecycleBin(orphanedMods []OrphanedMod) (int, int64) {
-	deletedCount := 0
-	spaceFreed := int64(0)
-
-	for _, om := range orphanedMods {
-		file := om.File
+	for i, file := range files {
+		// Update progress
+		progress := float64(i+1) / float64(totalFiles)
+		g.progressBar.SetValue(progress)
+		g.setStatus(fmt.Sprintf("Processing %d/%d files...", i+1, totalFiles))
 
 		if isFileLocked(file.FullPath) {
 			g.appendOutput(fmt.Sprintf("⚠ Skipped (locked): %s", file.FileName))
@@ -767,7 +758,35 @@ func (g *GUIApp) deleteOrphanedModsWithRecycleBin(orphanedMods []OrphanedMod) (i
 		}
 	}
 
+	// Hide progress bar when done
+	g.progressBar.Hide()
+
 	return deletedCount, spaceFreed
+}
+
+// deleteOldVersionsWithRecycleBin deletes old versions with recycle bin option
+func (g *GUIApp) deleteOldVersionsWithRecycleBin(duplicates map[string]*ModGroup) (int, int64) {
+	var filesToDelete []ModFile
+
+	for _, group := range duplicates {
+		// Collect old versions (everything before the newest)
+		for i := 0; i < group.NewestIdx; i++ {
+			filesToDelete = append(filesToDelete, group.Files[i])
+		}
+	}
+
+	return g.deleteModFilesWithRecycleBin(filesToDelete)
+}
+
+// deleteOrphanedModsWithRecycleBin deletes orphaned mods with recycle bin option
+func (g *GUIApp) deleteOrphanedModsWithRecycleBin(orphanedMods []OrphanedMod) (int, int64) {
+	var filesToDelete []ModFile
+
+	for _, om := range orphanedMods {
+		filesToDelete = append(filesToDelete, om.File)
+	}
+
+	return g.deleteModFilesWithRecycleBin(filesToDelete)
 }
 
 // Run starts the GUI application

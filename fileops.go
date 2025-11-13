@@ -17,6 +17,8 @@ package main
 
 import (
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 // deleteFile permanently deletes a file
@@ -33,4 +35,27 @@ func fileExists(path string) bool {
 // getFilesInFolder returns all entries in a folder
 func getFilesInFolder(path string) ([]os.DirEntry, error) {
 	return os.ReadDir(path)
+}
+
+// isValidPath validates a directory path
+func isValidPath(path string) bool {
+	// Check for empty path
+	if strings.TrimSpace(path) == "" {
+		return false
+	}
+
+	// Clean the path to normalize separators and remove redundancies
+	cleanPath := filepath.Clean(path)
+
+	// Check if path exists and is a directory
+	info, err := os.Stat(cleanPath)
+	if err != nil {
+		return false
+	}
+
+	if !info.IsDir() {
+		return false
+	}
+
+	return true
 }
