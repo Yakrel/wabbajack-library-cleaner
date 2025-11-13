@@ -109,16 +109,6 @@ All output appears in the scrollable text area at the bottom.
 go build -ldflags="-s -w" -o wabbajack-library-cleaner.exe
 ```
 
-### Testing
-
-Run the test suite to verify functionality:
-
-```bash
-go test -v ./...
-```
-
-See [TESTING.md](TESTING.md) for detailed testing instructions.
-
 ## ️ Mod File Naming Convention
 
 The tool recognizes Wabbajack/Nexus Mods file naming:
