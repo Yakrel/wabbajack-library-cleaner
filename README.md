@@ -102,8 +102,10 @@ Simply double-click `wabbajack-library-cleaner.exe` to launch the program.
 All output appears in the scrollable text area at the bottom.
 
 ### Compile from Source (Optional)
+
+**Requirements:** Go 1.25 or later ([Download](https://go.dev/dl/))
+
 ```bash
-# Prerequisites: Go 1.25 or later
 go build -ldflags="-s -w" -o wabbajack-library-cleaner.exe
 ```
 
