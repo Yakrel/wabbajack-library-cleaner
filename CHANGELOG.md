@@ -72,8 +72,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New files:
   - `gui.go`: Complete GUI implementation with progress tracking
   - `fileops.go`: File operation helpers
-  - `recyclebin_windows.go`: Windows Recycle Bin support (legacy code, not actively used)
-  - `recyclebin_unix.go`: Unix/Linux stub (legacy code, not actively used)
 - Reorganized main() to support GUI-only mode
 - Enhanced file operations with timestamped backup folders
 - Improved concurrency handling for UI responsiveness
