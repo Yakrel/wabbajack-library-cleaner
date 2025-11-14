@@ -39,3 +39,30 @@ func enableWindowsColors() {
 	// Set new console mode
 	setConsoleMode.Call(uintptr(handle), uintptr(mode))
 }
+
+// findWabbajackRootFolder searches common locations for Wabbajack installation (where Wabbajack.exe is)
+func findWabbajackRootFolder() string {
+	// Common installation drives
+	drives := []string{"C:", "D:", "E:", "F:", "G:"}
+
+	// Common installation paths
+	commonPaths := []string{
+		"\\Wabbajack",
+		"\\Games\\Wabbajack",
+		"\\Program Files\\Wabbajack",
+		"\\Program Files (x86)\\Wabbajack",
+	}
+
+	for _, drive := range drives {
+		for _, basePath := range commonPaths {
+			fullPath := drive + basePath
+			// Check if Wabbajack.exe exists in this folder
+			exePath := fullPath + "\\Wabbajack.exe"
+			if _, err := os.Stat(exePath); err == nil {
+				return fullPath
+			}
+		}
+	}
+
+	return ""
+}

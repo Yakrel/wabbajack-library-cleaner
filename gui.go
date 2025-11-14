@@ -17,6 +17,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -25,6 +26,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	nativedialog "github.com/sqweek/dialog"
 )
 
 // GUIApp holds the GUI application state
@@ -43,7 +45,7 @@ type GUIApp struct {
 	recycleBinCheck  *widget.Check
 	modlistContainer *fyne.Container
 	actionsContainer *fyne.Container
-	progressBar      *widget.ProgressBar
+	progressBar      *widget.ProgressBarInfinite
 }
 
 // NewGUIApp creates and initializes the GUI application
@@ -51,6 +53,13 @@ func NewGUIApp() *GUIApp {
 	a := app.NewWithID("com.yakrel.wabbajack-library-cleaner")
 	w := a.NewWindow("Wabbajack Library Cleaner")
 	w.Resize(fyne.NewSize(900, 700))
+	w.CenterOnScreen() // Center window on screen
+
+	// Set window icon
+	icon, err := fyne.LoadResourceFromPath("winres/icon_main.png")
+	if err == nil {
+		w.SetIcon(icon)
+	}
 
 	guiApp := &GUIApp{
 		app:    a,
@@ -75,9 +84,9 @@ func (g *GUIApp) setupUI() {
 		fyne.TextStyle{},
 	)
 
-	// Step 1: Modlist folder selection
-	g.wabbajackLabel = widget.NewLabel("Modlist Folder: (Not selected)")
-	selectWabbajackBtn := widget.NewButton("📁 Select Modlist Folder", func() {
+	// Step 1: Wabbajack root folder selection
+	g.wabbajackLabel = widget.NewLabel("Wabbajack Folder: (Not selected)")
+	selectWabbajackBtn := widget.NewButton("📁 Select Wabbajack Folder", func() {
 		g.selectWabbajackDir()
 	})
 
@@ -85,8 +94,10 @@ func (g *GUIApp) setupUI() {
 	g.modlistContainer = container.NewVBox()
 
 	dirSection1 := container.NewVBox(
-		widget.NewLabelWithStyle("Step 1: Select Modlist Folder", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		widget.NewLabel("Select the folder containing your .wabbajack files (e.g., F:\\Wabbajack\\downloads_modlist)"),
+		widget.NewLabelWithStyle("Step 1: Select Wabbajack Folder", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewLabel("Select your Wabbajack installation folder (where Wabbajack.exe is located)"),
+		widget.NewLabel("Example: D:\\Wabbajack or D:\\Games\\Wabbajack"),
+		widget.NewLabel("💡 The tool will automatically scan all version folders for modlists"),
 		g.wabbajackLabel,
 		selectWabbajackBtn,
 		g.modlistContainer,
@@ -101,7 +112,8 @@ func (g *GUIApp) setupUI() {
 	dirSection2 := container.NewVBox(
 		widget.NewSeparator(),
 		widget.NewLabelWithStyle("Step 2: Select Downloads Folder", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		widget.NewLabel("Select the folder containing your mod archives (game folders like Skyrim, Fallout4, etc.)"),
+		widget.NewLabel("Select your Wabbajack downloads folder (e.g., F:\\Wabbajack)"),
+		widget.NewLabel("💡 The tool will scan all subfolders (Fallout 4, Skyrim, etc.)"),
 		g.downloadsLabel,
 		selectDownloadsBtn,
 	)
@@ -185,7 +197,7 @@ func (g *GUIApp) setupUI() {
 
 	// Status bar and progress
 	g.statusLabel = widget.NewLabel("Ready")
-	g.progressBar = widget.NewProgressBar()
+	g.progressBar = widget.NewProgressBarInfinite()
 	g.progressBar.Hide() // Initially hidden
 
 	statusSection := container.NewVBox(
@@ -226,74 +238,128 @@ func (g *GUIApp) setStatus(text string) {
 	g.statusLabel.SetText(text)
 }
 
-// selectWabbajackDir opens a dialog to select the wabbajack directory and auto-scans for modlists
+// selectWabbajackDir opens a dialog to select the wabbajack root directory and auto-scans all version folders
 func (g *GUIApp) selectWabbajackDir() {
-	dialog.ShowFolderOpen(func(uri fyne.ListableURI, err error) {
-		if err != nil {
+	// Don't search automatically - causes freezing on slow drives
+	// User can manually navigate to Wabbajack folder
+
+	dialogBuilder := nativedialog.Directory().Title("Select Wabbajack Folder (where Wabbajack.exe is)")
+
+	path, err := dialogBuilder.Browse()
+	if err != nil {
+		if err.Error() != "Cancelled" {
 			dialog.ShowError(err, g.window)
 			logError("Error selecting wabbajack directory: %v", err)
-			return
 		}
-		if uri == nil {
-			return
-		}
+		return
+	}
 
-		// Validate path
-		path := uri.Path()
-		if !isValidPath(path) {
-			dialog.ShowError(fmt.Errorf("invalid directory path"), g.window)
-			logError("Invalid wabbajack directory path: %s", path)
-			return
-		}
+	// Validate path
+	if !isValidPath(path) {
+		dialog.ShowError(fmt.Errorf("invalid directory path"), g.window)
+		logError("Invalid wabbajack directory path: %s", path)
+		return
+	}
 
-		g.wabbajackDir = path
-		g.wabbajackLabel.SetText("Modlist Folder: " + g.wabbajackDir)
-		g.appendOutput("\n=== Scanning for Modlists ===")
-		g.appendOutput("Selected modlist folder: " + g.wabbajackDir)
-		logInfo("User selected wabbajack directory: %s", g.wabbajackDir)
+	g.wabbajackDir = path
+	g.wabbajackLabel.SetText("Wabbajack Folder: " + g.wabbajackDir)
+	g.appendOutput("\n=== Scanning Wabbajack Installation ===")
+	g.appendOutput("Selected Wabbajack folder: " + g.wabbajackDir)
+	logInfo("User selected wabbajack directory: %s", g.wabbajackDir)
 
-		// Auto-scan for .wabbajack files
-		g.scanAndDisplayModlists()
-	}, g.window)
+	// Scan all version folders for modlists
+	g.scanAllVersionsForModlists()
 }
 
-// scanAndDisplayModlists scans the selected folder for .wabbajack files and displays checkboxes
-func (g *GUIApp) scanAndDisplayModlists() {
-	g.setStatus("Scanning for modlists...")
+// scanAllVersionsForModlists scans all version folders in Wabbajack root and merges modlists (newest version priority)
+func (g *GUIApp) scanAllVersionsForModlists() {
+	g.setStatus("Scanning version folders...")
 
-	// Find wabbajack files
-	wabbajackFiles, err := findWabbajackFiles(g.wabbajackDir)
+	// Find all version folders
+	entries, err := os.ReadDir(g.wabbajackDir)
 	if err != nil {
-		g.appendOutput(fmt.Sprintf("❌ Error scanning folder: %v", err))
-		g.setStatus("Scan error")
+		g.appendOutput(fmt.Sprintf("❌ Error reading Wabbajack folder: %v", err))
 		dialog.ShowError(err, g.window)
 		return
 	}
-	if len(wabbajackFiles) == 0 {
-		g.appendOutput("❌ No .wabbajack files found in this folder")
-		g.setStatus("No modlists found")
-		dialog.ShowError(fmt.Errorf("No .wabbajack files found in: %s", g.wabbajackDir), g.window)
+
+	// Collect all modlist paths from all version folders
+	type modlistEntry struct {
+		path    string
+		version string
+	}
+	modlistMap := make(map[string]modlistEntry) // key: modlist filename (without @@), value: latest version path
+
+	var versionFolders []string
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		// Check if this folder has downloaded_mod_lists
+		modlistsPath := filepath.Join(g.wabbajackDir, entry.Name(), "downloaded_mod_lists")
+		if _, err := os.Stat(modlistsPath); err == nil {
+			versionFolders = append(versionFolders, entry.Name())
+
+			// Scan for .wabbajack files in this version
+			wbFiles, err := findWabbajackFiles(modlistsPath)
+			if err != nil {
+				continue
+			}
+
+			g.appendOutput(fmt.Sprintf("Version %s: Found %d modlist(s)", entry.Name(), len(wbFiles)))
+
+			for _, wbFile := range wbFiles {
+				// Extract modlist name (before @@)
+				baseName := filepath.Base(wbFile)
+				parts := strings.Split(baseName, "@@")
+				modlistKey := baseName
+				if len(parts) > 0 {
+					modlistKey = parts[0]
+				}
+
+				// Keep the latest version (last folder alphabetically = newest version)
+				existing, exists := modlistMap[modlistKey]
+				if !exists || entry.Name() > existing.version {
+					modlistMap[modlistKey] = modlistEntry{
+						path:    wbFile,
+						version: entry.Name(),
+					}
+				}
+			}
+		}
+	}
+
+	if len(versionFolders) == 0 {
+		g.appendOutput("❌ No version folders with downloaded_mod_lists found")
+		g.appendOutput("⚠️ Make sure you selected the Wabbajack root folder (where Wabbajack.exe is)")
+		dialog.ShowError(fmt.Errorf("No version folders found in: %s", g.wabbajackDir), g.window)
 		return
 	}
 
-	g.appendOutput(fmt.Sprintf("Found %d modlist file(s)", len(wabbajackFiles)))
+	if len(modlistMap) == 0 {
+		g.appendOutput("❌ No .wabbajack files found in any version folder")
+		dialog.ShowError(fmt.Errorf("No .wabbajack files found"), g.window)
+		return
+	}
 
-	// Parse modlists
+	g.appendOutput(fmt.Sprintf("\n📊 Total unique modlists found: %d", len(modlistMap)))
+
+	// Parse the selected modlists (newest version of each)
 	g.modlistInfos = nil
-	for _, wbFile := range wabbajackFiles {
-		info, err := parseWabbajackFile(wbFile)
+	for modlistKey, entry := range modlistMap {
+		info, err := parseWabbajackFile(entry.path)
 		if err != nil {
-			g.appendOutput(fmt.Sprintf("⚠️ Failed to parse %s: %v", filepath.Base(wbFile), err))
-			logError("Failed to parse %s: %v", wbFile, err)
+			g.appendOutput(fmt.Sprintf("⚠️ Failed to parse %s: %v", modlistKey, err))
+			logError("Failed to parse %s: %v", entry.path, err)
 			continue
 		}
-		g.appendOutput(fmt.Sprintf("  ✓ %s (%d mods)", info.Name, info.ModCount))
+		g.appendOutput(fmt.Sprintf("  ✓ %s (%d mods) [v%s]", info.Name, info.ModCount, entry.version))
 		g.modlistInfos = append(g.modlistInfos, info)
 	}
 
 	if len(g.modlistInfos) == 0 {
 		g.appendOutput("❌ Failed to parse any modlist files")
-		g.setStatus("Failed to parse modlists")
 		dialog.ShowError(fmt.Errorf("Failed to parse any modlist files"), g.window)
 		return
 	}
@@ -329,35 +395,31 @@ func (g *GUIApp) scanAndDisplayModlists() {
 	g.modlistContainer.Add(buttonRow)
 
 	g.modlistContainer.Refresh()
-	g.setStatus(fmt.Sprintf("Found %d modlists - select which ones you're using", len(g.modlistInfos)))
-	g.appendOutput("\n✅ Modlists loaded! Select the ones you're currently using, then proceed to Step 2.")
+	g.setStatus(fmt.Sprintf("Found %d modlists", len(g.modlistInfos)))
 }
 
 // selectDownloadsDir opens a dialog to select the downloads directory
 func (g *GUIApp) selectDownloadsDir() {
-	dialog.ShowFolderOpen(func(uri fyne.ListableURI, err error) {
-		if err != nil {
+	path, err := nativedialog.Directory().Title("Select Downloads Folder").Browse()
+	if err != nil {
+		if err.Error() != "Cancelled" {
 			dialog.ShowError(err, g.window)
 			logError("Error selecting downloads directory: %v", err)
-			return
 		}
-		if uri == nil {
-			return
-		}
+		return
+	}
 
-		// Validate path
-		path := uri.Path()
-		if !isValidPath(path) {
-			dialog.ShowError(fmt.Errorf("invalid directory path"), g.window)
-			logError("Invalid downloads directory path: %s", path)
-			return
-		}
+	// Validate path
+	if !isValidPath(path) {
+		dialog.ShowError(fmt.Errorf("invalid directory path"), g.window)
+		logError("Invalid downloads directory path: %s", path)
+		return
+	}
 
-		g.downloadsDir = path
-		g.downloadsLabel.SetText("Downloads Directory: " + g.downloadsDir)
-		g.appendOutput("Selected downloads directory: " + g.downloadsDir)
-		logInfo("User selected downloads directory: %s", g.downloadsDir)
-	}, g.window)
+	g.downloadsDir = path
+	g.downloadsLabel.SetText("Downloads Directory: " + g.downloadsDir)
+	g.appendOutput("Selected downloads directory: " + g.downloadsDir)
+	logInfo("User selected downloads directory: %s", g.downloadsDir)
 }
 
 // validateDirectories checks if required directories are selected
@@ -527,6 +589,8 @@ func (g *GUIApp) scanOrphanedMods(deleteMode bool) {
 		return
 	}
 
+	// Show progress and disable buttons during scan
+	g.progressBar.Show()
 	g.setStatus("Scanning for orphaned mods...")
 	g.appendOutput("\n=== Scanning for Orphaned Mods ===")
 	g.appendOutput(fmt.Sprintf("Using %d selected modlist(s):", len(activeModlists)))
@@ -534,8 +598,15 @@ func (g *GUIApp) scanOrphanedMods(deleteMode bool) {
 		g.appendOutput(fmt.Sprintf("  ✓ %s", ml.Name))
 	}
 
-	// Perform the scan
-	g.performOrphanedScan(activeModlists, deleteMode)
+	// Run scan in goroutine to prevent UI freeze
+	go func() {
+		defer func() {
+			g.progressBar.Hide()
+		}()
+
+		// Perform the scan
+		g.performOrphanedScan(activeModlists, deleteMode)
+	}()
 }
 
 // performOrphanedScan performs the actual orphaned mods scan
@@ -720,13 +791,10 @@ func (g *GUIApp) deleteModFilesWithRecycleBin(files []ModFile) (int, int64) {
 	// Show progress bar if we have files to delete
 	if totalFiles > 0 {
 		g.progressBar.Show()
-		g.progressBar.SetValue(0)
 	}
 
 	for i, file := range files {
-		// Update progress
-		progress := float64(i+1) / float64(totalFiles)
-		g.progressBar.SetValue(progress)
+		// Update status
 		g.setStatus(fmt.Sprintf("Processing %d/%d files...", i+1, totalFiles))
 
 		if isFileLocked(file.FullPath) {
