@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -31,28 +32,31 @@ import (
 
 // GUIApp holds the GUI application state
 type GUIApp struct {
-	app              fyne.App
-	window           fyne.Window
-	wabbajackDir     string
-	downloadsDir     string
-	useRecycleBin    bool
-	modlistInfos     []*ModlistInfo
-	modlistChecks    []*widget.Check
-	outputText       *widget.Entry
-	statusLabel      *widget.Label
-	wabbajackLabel   *widget.Label
-	downloadsLabel   *widget.Label
-	recycleBinCheck  *widget.Check
-	modlistContainer *fyne.Container
-	actionsContainer *fyne.Container
-	progressBar      *widget.ProgressBarInfinite
+	app               fyne.App
+	window            fyne.Window
+	wabbajackDir      string
+	downloadsDir      string
+	moveToBackup      bool
+	modlistInfos      []*ModlistInfo
+	modlistChecks     []*widget.Check
+	outputText        *widget.Entry
+	statusLabel       *widget.Label
+	wabbajackLabel    *widget.Label
+	downloadsLabel    *widget.Label
+	backupPathLabel   *widget.Label
+	backupFolderCheck *widget.Check
+	modlistContainer  *fyne.Container
+	actionsContainer  *fyne.Container
+	progressBar       *widget.ProgressBar
+	scrollContainer   *container.Scroll
+	progressSection   *fyne.Container
 }
 
 // NewGUIApp creates and initializes the GUI application
 func NewGUIApp() *GUIApp {
 	a := app.NewWithID("com.yakrel.wabbajack-library-cleaner")
 	w := a.NewWindow("Wabbajack Library Cleaner")
-	w.Resize(fyne.NewSize(900, 700))
+	w.Resize(fyne.NewSize(1200, 900))
 	w.CenterOnScreen() // Center window on screen
 
 	// Set window icon
@@ -112,28 +116,32 @@ func (g *GUIApp) setupUI() {
 	dirSection2 := container.NewVBox(
 		widget.NewSeparator(),
 		widget.NewLabelWithStyle("Step 2: Select Downloads Folder", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		widget.NewLabel("Select your Wabbajack downloads folder (e.g., F:\\Wabbajack)"),
-		widget.NewLabel("💡 The tool will scan all subfolders (Fallout 4, Skyrim, etc.)"),
+		widget.NewLabel("Select your downloads folder (e.g., F:\\Wabbajack or F:\\Wabbajack\\Fallout 4)"),
+		widget.NewLabel("💡 You can select either the parent folder or a specific game folder"),
 		g.downloadsLabel,
 		selectDownloadsBtn,
 	)
 
 	// Step 3: Options
-	g.recycleBinCheck = widget.NewCheck("🗑️ Send deleted files to Recycle Bin (safer - can be restored)", func(checked bool) {
-		g.useRecycleBin = checked
+	g.backupPathLabel = widget.NewLabel("Deleted files will be moved to: (Select downloads folder first)")
+	g.backupPathLabel.Wrapping = fyne.TextWrapWord
+
+	g.backupFolderCheck = widget.NewCheck("💾 Move to deletion folder (can be restored later)", func(checked bool) {
+		g.moveToBackup = checked
 	})
-	g.recycleBinCheck.SetChecked(true) // Default to recycle bin for safety
-	g.useRecycleBin = true
+	g.backupFolderCheck.SetChecked(true) // Default to deletion folder for safety
+	g.moveToBackup = true
 
 	optionsSection := container.NewVBox(
 		widget.NewSeparator(),
 		widget.NewLabelWithStyle("Step 3: Deletion Options", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		g.recycleBinCheck,
+		g.backupPathLabel,
+		g.backupFolderCheck,
 	)
 
 	// Step 4: Action buttons (PRIMARY: Orphaned Mods, SECONDARY: Old Versions)
 	// Primary Actions - Orphaned Mods Cleanup
-	scanOrphanedBtn := widget.NewButton("🔍 Scan for Orphaned Mods (Preview)", func() {
+	scanOrphanedBtn := widget.NewButton("🔍 Scan for Orphaned Mods", func() {
 		g.scanOrphanedMods(false)
 	})
 	scanOrphanedBtn.Importance = widget.HighImportance
@@ -144,7 +152,7 @@ func (g *GUIApp) setupUI() {
 	cleanOrphanedBtn.Importance = widget.HighImportance
 
 	// Secondary Actions - Old Versions Cleanup
-	scanOldVersionsBtn := widget.NewButton("🔍 Scan for Old Versions (Preview)", func() {
+	scanOldVersionsBtn := widget.NewButton("🔍 Scan for Old Versions", func() {
 		g.scanOldVersions(false)
 	})
 
@@ -155,6 +163,10 @@ func (g *GUIApp) setupUI() {
 	// Other Actions
 	statsBtn := widget.NewButton("📊 View Statistics", func() {
 		g.viewStats()
+	})
+
+	aboutBtn := widget.NewButton("📖 About", func() {
+		g.showAbout()
 	})
 
 	g.actionsContainer = container.NewVBox(
@@ -174,7 +186,10 @@ func (g *GUIApp) setupUI() {
 			cleanOldVersionsBtn,
 		),
 		widget.NewSeparator(),
-		statsBtn,
+		container.NewGridWithColumns(2,
+			statsBtn,
+			aboutBtn,
+		),
 	)
 
 	// Output section
@@ -195,14 +210,27 @@ func (g *GUIApp) setupUI() {
 		clearBtn,
 	)
 
-	// Status bar and progress
+	// Status bar and progress (placed after actions for visibility)
 	g.statusLabel = widget.NewLabel("Ready")
-	g.progressBar = widget.NewProgressBarInfinite()
+	g.progressBar = widget.NewProgressBar()
 	g.progressBar.Hide() // Initially hidden
 
-	statusSection := container.NewVBox(
+	g.progressSection = container.NewVBox(
+		widget.NewSeparator(),
 		g.statusLabel,
 		g.progressBar,
+	)
+
+	// Footer with branding
+	footerLabel := widget.NewLabelWithStyle(
+		"Made by Berkay Yetgin | github.com/Yakrel/wabbajack-library-cleaner",
+		fyne.TextAlignCenter,
+		fyne.TextStyle{Italic: true},
+	)
+
+	footerSection := container.NewVBox(
+		widget.NewSeparator(),
+		footerLabel,
 	)
 
 	// Main layout
@@ -214,13 +242,13 @@ func (g *GUIApp) setupUI() {
 		dirSection2,
 		optionsSection,
 		g.actionsContainer,
+		g.progressSection,
 		outputSection,
-		widget.NewSeparator(),
-		statusSection,
+		footerSection,
 	)
 
-	scrollContent := container.NewScroll(content)
-	g.window.SetContent(scrollContent)
+	g.scrollContainer = container.NewScroll(content)
+	g.window.SetContent(g.scrollContainer)
 }
 
 // appendOutput adds text to the output area
@@ -420,6 +448,11 @@ func (g *GUIApp) selectDownloadsDir() {
 	g.downloadsLabel.SetText("Downloads Directory: " + g.downloadsDir)
 	g.appendOutput("Selected downloads directory: " + g.downloadsDir)
 	logInfo("User selected downloads directory: %s", g.downloadsDir)
+
+	// Update path label with timestamp example
+	timestamp := time.Now().Format("2006-01-02_15-04-05")
+	backupPath := filepath.Join(g.downloadsDir, "WLC_Deleted", timestamp)
+	g.backupPathLabel.SetText("Deleted files will be moved to: " + backupPath)
 }
 
 // validateDirectories checks if required directories are selected
@@ -459,6 +492,9 @@ func (g *GUIApp) scanOldVersions(deleteMode bool) {
 	g.setStatus("Scanning for old versions...")
 	g.appendOutput("\n=== Scanning for Old Versions ===")
 
+	// Scroll to progress section
+	g.scrollContainer.ScrollToBottom()
+
 	gameFolders, err := getGameFolders(g.downloadsDir)
 	if err != nil || len(gameFolders) == 0 {
 		dialog.ShowError(fmt.Errorf("No game folders found in: %s", g.downloadsDir), g.window)
@@ -484,11 +520,11 @@ func (g *GUIApp) scanOldVersions(deleteMode bool) {
 	folderSelect.PlaceHolder = "Select a folder to scan..."
 
 	confirmDialog := dialog.NewCustomConfirm(
-		"Select Game Folder",
+		"Select Folder to Scan",
 		"Scan",
 		"Cancel",
 		container.NewVBox(
-			widget.NewLabel("Select which game folder to scan:"),
+			widget.NewLabel("Select which mod folder to scan for old versions:"),
 			folderSelect,
 		),
 		func(confirmed bool) {
@@ -611,25 +647,45 @@ func (g *GUIApp) scanOrphanedMods(deleteMode bool) {
 
 // performOrphanedScan performs the actual orphaned mods scan
 func (g *GUIApp) performOrphanedScan(activeModlists []*ModlistInfo, deleteMode bool) {
+	// Show progress bar for scanning phase
+	g.progressBar.Show()
+	g.progressBar.Min = 0
+	g.progressBar.Max = 100
+	g.progressBar.SetValue(0)
+
+	// Scroll to progress section to make it visible
+	g.scrollContainer.ScrollToBottom()
+
 	// Get game folders
+	g.setStatus("Getting game folders...")
+	g.progressBar.SetValue(10)
 	gameFolders, err := getGameFolders(g.downloadsDir)
 	if err != nil {
+		g.progressBar.Hide()
 		dialog.ShowError(err, g.window)
 		return
 	}
 
 	// Collect all mod files
+	g.setStatus("Collecting mod files...")
+	g.progressBar.SetValue(30)
 	g.appendOutput("\nCollecting mod files...")
 	allModFiles, err := getAllModFiles(gameFolders)
 	if err != nil {
+		g.progressBar.Hide()
 		dialog.ShowError(err, g.window)
 		return
 	}
 	g.appendOutput(fmt.Sprintf("Found %d mod files", len(allModFiles)))
 
 	// Detect orphaned mods
+	g.setStatus("Analyzing mod usage...")
+	g.progressBar.SetValue(60)
 	g.appendOutput("Analyzing...")
 	usedMods, orphanedMods := detectOrphanedMods(allModFiles, activeModlists)
+
+	g.progressBar.SetValue(90)
+	g.setStatus("Calculating results...")
 
 	// Calculate sizes
 	usedSize := int64(0)
@@ -645,6 +701,9 @@ func (g *GUIApp) performOrphanedScan(activeModlists []*ModlistInfo, deleteMode b
 	g.appendOutput("\n=== RESULTS ===")
 	g.appendOutput(fmt.Sprintf("✓ USED MODS: %d files (%s)", len(usedMods), formatSize(usedSize)))
 	g.appendOutput(fmt.Sprintf("✗ ORPHANED MODS: %d files (%s)", len(orphanedMods), formatSize(orphanedSize)))
+
+	g.progressBar.SetValue(100)
+	g.progressBar.Hide()
 
 	if len(orphanedMods) == 0 {
 		g.setStatus("No orphaned mods found")
@@ -762,8 +821,8 @@ func (g *GUIApp) viewStats() {
 // confirmAndDelete shows confirmation dialog before deletion
 func (g *GUIApp) confirmAndDelete(onConfirm func()) {
 	var confirmText string
-	if g.useRecycleBin {
-		confirmText = "Are you sure you want to send these files to the Recycle Bin?"
+	if g.moveToBackup {
+		confirmText = "Files will be moved to a timestamped deletion folder.\n\nYou can restore them later if needed.\n\nContinue?"
 	} else {
 		confirmText = "⚠️ WARNING ⚠️\n\nThis will PERMANENTLY DELETE files!\n\nAre you absolutely sure?"
 	}
@@ -773,7 +832,13 @@ func (g *GUIApp) confirmAndDelete(onConfirm func()) {
 		confirmText,
 		func(confirmed bool) {
 			if confirmed {
-				onConfirm()
+				g.progressBar.Show()
+				g.scrollContainer.ScrollToBottom()
+
+				// Run deletion in goroutine to prevent UI freeze
+				go func() {
+					onConfirm()
+				}()
 			} else {
 				g.setStatus("Cancelled")
 			}
@@ -782,20 +847,42 @@ func (g *GUIApp) confirmAndDelete(onConfirm func()) {
 	)
 }
 
-// deleteModFilesWithRecycleBin is a common function to delete mod files with recycle bin option
+// deleteModFilesWithRecycleBin is a common function to delete mod files with backup folder option
 func (g *GUIApp) deleteModFilesWithRecycleBin(files []ModFile) (int, int64) {
 	deletedCount := 0
 	spaceFreed := int64(0)
 	totalFiles := len(files)
 
+	// Create backup folder with timestamp if moveToBackup is enabled
+	var backupDir string
+	if g.moveToBackup {
+		timestamp := time.Now().Format("2006-01-02_15-04-05")
+		backupDir = filepath.Join(g.downloadsDir, "WLC_Deleted", timestamp)
+		err := os.MkdirAll(backupDir, 0755)
+		if err != nil {
+			g.appendOutput(fmt.Sprintf("❌ Failed to create backup folder: %v", err))
+			logError("Failed to create backup folder: %v", err)
+			g.progressBar.Hide()
+			return 0, 0
+		}
+		g.appendOutput(fmt.Sprintf("📁 Created backup folder: %s", backupDir))
+	}
+
 	// Show progress bar if we have files to delete
 	if totalFiles > 0 {
+		g.progressBar.Min = 0
+		g.progressBar.Max = float64(totalFiles)
+		g.progressBar.SetValue(0)
 		g.progressBar.Show()
 	}
 
 	for i, file := range files {
-		// Update status
-		g.setStatus(fmt.Sprintf("Processing %d/%d files...", i+1, totalFiles))
+		// Update progress bar
+		g.progressBar.SetValue(float64(i + 1))
+
+		// Update status with detailed info
+		percentage := int(float64(i+1) / float64(totalFiles) * 100)
+		g.setStatus(fmt.Sprintf("Processing: %d/%d files (%d%%)", i+1, totalFiles, percentage))
 
 		if isFileLocked(file.FullPath) {
 			g.appendOutput(fmt.Sprintf("⚠ Skipped (locked): %s", file.FileName))
@@ -803,35 +890,43 @@ func (g *GUIApp) deleteModFilesWithRecycleBin(files []ModFile) (int, int64) {
 		}
 
 		var err error
-		if g.useRecycleBin {
-			err = moveToRecycleBin(file.FullPath)
+		if g.moveToBackup {
+			// Move to backup folder
+			backupPath := filepath.Join(backupDir, file.FileName)
+			err = os.Rename(file.FullPath, backupPath)
 		} else {
 			err = deleteFile(file.FullPath)
 		}
 
 		if err != nil {
-			g.appendOutput(fmt.Sprintf("✗ Failed to delete: %s - %v", file.FileName, err))
-			logError("Failed to delete %s: %v", file.FullPath, err)
+			g.appendOutput(fmt.Sprintf("✗ Failed to process: %s - %v", file.FileName, err))
+			logError("Failed to process %s: %v", file.FullPath, err)
 			continue
 		}
 
 		deletedCount++
 		spaceFreed += file.Size
-		g.appendOutput(fmt.Sprintf("✓ Deleted: %s (%s)", file.FileName, formatSize(file.Size)))
-		logInfo("Deleted: %s (%s)", file.FileName, formatSize(file.Size))
+		if g.moveToBackup {
+			g.appendOutput(fmt.Sprintf("✓ Moved: %s (%s)", file.FileName, formatSize(file.Size)))
+			logInfo("Moved to backup: %s (%s)", file.FileName, formatSize(file.Size))
+		} else {
+			g.appendOutput(fmt.Sprintf("✓ Deleted: %s (%s)", file.FileName, formatSize(file.Size)))
+			logInfo("Deleted: %s (%s)", file.FileName, formatSize(file.Size))
+		}
 
-		// Delete .meta file
+		// Handle .meta file
 		metaPath := file.FullPath + ".meta"
 		if fileExists(metaPath) {
 			var metaErr error
-			if g.useRecycleBin {
-				metaErr = moveToRecycleBin(metaPath)
+			if g.moveToBackup {
+				backupMetaPath := filepath.Join(backupDir, file.FileName+".meta")
+				metaErr = os.Rename(metaPath, backupMetaPath)
 			} else {
 				metaErr = deleteFile(metaPath)
 			}
 			if metaErr != nil {
-				g.appendOutput(fmt.Sprintf("⚠ Failed to delete .meta file: %s - %v", filepath.Base(metaPath), metaErr))
-				logWarning("Failed to delete .meta file: %s - %v", metaPath, metaErr)
+				g.appendOutput(fmt.Sprintf("⚠ Failed to process .meta file: %s - %v", filepath.Base(metaPath), metaErr))
+				logWarning("Failed to process .meta file: %s - %v", metaPath, metaErr)
 			}
 		}
 	}
@@ -865,6 +960,20 @@ func (g *GUIApp) deleteOrphanedModsWithRecycleBin(orphanedMods []OrphanedMod) (i
 	}
 
 	return g.deleteModFilesWithRecycleBin(filesToDelete)
+}
+
+// showAbout displays the About dialog
+func (g *GUIApp) showAbout() {
+	aboutText := `Wabbajack Library Cleaner v2.0
+
+© 2025 Berkay Yetgin
+
+GitHub: github.com/Yakrel/wabbajack-library-cleaner
+
+Licensed under GNU General Public License v3.0
+This is free and open source software.`
+
+	dialog.ShowInformation("About", aboutText, g.window)
 }
 
 // Run starts the GUI application

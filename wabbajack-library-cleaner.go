@@ -165,6 +165,22 @@ func getGameFolders(baseDir string) ([]string, error) {
 		return nil, err
 	}
 
+	// Check if this directory itself contains mod files
+	hasModFiles := false
+	for _, entry := range entries {
+		if !entry.IsDir() && isWabbajackFile(entry.Name()) {
+			hasModFiles = true
+			break
+		}
+	}
+
+	// If the selected directory contains mod files, include it
+	if hasModFiles {
+		logInfo("Selected directory contains mod files, including it: %s", baseDir)
+		folders = append(folders, baseDir)
+	}
+
+	// Also scan for subdirectories (game folders)
 	for _, entry := range entries {
 		if entry.IsDir() && !strings.HasPrefix(entry.Name(), ".") && !strings.HasPrefix(entry.Name(), "__") {
 			folders = append(folders, filepath.Join(baseDir, entry.Name()))

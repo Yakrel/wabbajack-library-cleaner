@@ -22,7 +22,17 @@
 
 ## 📸 Screenshots
 
-Coming soon! (GUI screenshots will be added after build)
+### Main Interface
+![Main Interface](screenshots/main-interface.png)
+*Main window showing modlist selection, deletion options, and action buttons*
+
+### Orphaned Mods Scan
+![Orphaned Mods Scan](screenshots/orphaned-scan.png)
+*Scanning and detecting mods not used by selected modlists*
+
+### Old Versions Scan
+![Old Versions Scan](screenshots/old-versions-scan.png)
+*Finding duplicate mod versions in selected folder*
 
 ## ✨ Key Features
 
@@ -32,14 +42,15 @@ Coming soon! (GUI screenshots will be added after build)
 - 🧠 **Smart Parsing** - Reads `.wabbajack` files to determine which mods are needed
 - 🛡️ **Shared Protection** - Mods used by multiple modlists are never deleted
 - ⚠️ **Old Version Cleanup** - Remove duplicate mod versions (use with caution!)
-- 🗑️ **Recycle Bin** - Deleted files can be restored (recommended!)
-- 🖼️ **Modern GUI** - Easy-to-use Windows interface
+- 💾 **Safe Deletion** - Deleted files moved to timestamped folder (can be restored!)
+- 🖌️ **Modern GUI** - Easy-to-use Windows interface
+- 📈 **Real-time Progress** - Visual progress bar with percentage and file count
 - 📊 **Statistics** - View library size by game
 - 📝 **Complete Logging** - All operations tracked with timestamps
 
 ## 🛡️ Safety Protections
 
-- 🗑️ **Recycle Bin by default** - Files can be restored
+- 💾 **Deletion folder by default** - Files moved to timestamped folder (can be restored)
 - 🔍 **Preview mode** - See what will be deleted before confirming
 - ✋ **Confirmation dialogs** - Multiple checks before deletion
 - 🔒 **File lock detection** - Skips files in use
@@ -67,25 +78,34 @@ Coming soon! (GUI screenshots will be added after build)
 **Step 2: Select Downloads Folder**
 - Click **"📁 Select Downloads Folder"**
 - Choose your Wabbajack downloads directory
-  - Example: `F:\Wabbajack\downloads` (contains game-specific folders like Skyrim, Fallout4, etc.)
+  - Example (parent folder): `F:\Wabbajack` (contains game folders like Fallout 4, Skyrim, etc.)
+  - Example (specific game): `F:\Wabbajack\Fallout 4` (if you only want to scan one game)
+- The tool will scan both the selected folder and its subfolders for mod files
 
 **Step 3: Configure Safety Options**
-- ✅ **"Send deleted files to Recycle Bin"** ← Recommended! (you can restore files if needed)
+- ✅ **"Move to deletion folder"** ← Recommended! (files moved to timestamped folder)
+  - Deletion folder location: `[Downloads]\WLC_Deleted\[timestamp]\`
+  - Example: `F:\Wabbajack\WLC_Deleted\2025-11-14_15-30-45\`
+  - You can restore files by simply moving them back
+  - Each cleanup operation creates a new timestamped folder
 - ❌ Uncheck for permanent deletion (⚠️ cannot be undone!)
 
 **Step 4: Clean Your Library**
 
 **🎯 PRIMARY: Clean Orphaned Mods** (Major space savings!)
-1. **"🔍 Scan for Orphaned Mods"** → Preview what will be deleted
-2. Review output: shows which mods are kept vs removed
-3. **"🧹 Clean Orphaned Mods"** → Delete after confirmation
+1. **"🔍 Scan for Orphaned Mods"** → Analyzes which mods are used by your selected modlists
+2. Review output: Shows used mods vs orphaned mods with file counts and sizes
+3. **"🧹 Clean Orphaned Mods"** → Moves orphaned mods to deletion folder after confirmation
+   - Progress bar shows real-time progress
+   - Files are moved (not deleted) so you can restore them
 
 **⚠️ SECONDARY: Clean Old Versions** (Use with caution!)
 - ⚠️ **Warning:** Your modlist may require old versions! This feature only looks at timestamps, not what your modlist actually needs.
 - Only use if you understand the risks
-1. Select game folder to scan
-2. Preview old versions detected
-3. Clean only if you're certain they're safe to remove
+1. **"🔍 Scan for Old Versions"** → Select a game folder to scan
+2. Review detected duplicates with version information
+3. **"🧹 Clean Old Versions"** → Removes old versions, keeps newest
+   - Use only if you're certain old versions aren't needed
 
 **📊 View Statistics**
 - See your mod library size breakdown by game
@@ -203,6 +223,6 @@ The orphaned mods feature is particularly effective if you've tried multiple mod
 
 **Current Version:** v2.0.0
 
-**Major Update:** Now with GUI interface and Recycle Bin support!
+**Major Update:** Now with GUI interface and safe deletion folder!
 
 See [CHANGELOG](CHANGELOG.md) for version history.

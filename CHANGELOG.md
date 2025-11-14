@@ -5,7 +5,7 @@ All notable changes to Wabbajack Library Cleaner will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 2.0.0 - 2025-11-13
+## 2.0.0 - 2025-11-14
 
 ### Major Changes
 - **🖼️ Windows-Only GUI Application** - Complete rewrite as a GUI-only Windows application
@@ -23,18 +23,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Check/uncheck modlists directly in the main window
   - Clear visual indication of selected modlists
   - Selected modlists used for orphaned mods detection
-- **NEW: Recycle Bin Support** - Files go to Recycle Bin by default
-  - Checkbox to toggle between Recycle Bin and permanent deletion
-  - Default: Recycle Bin (safer - can be restored)
-  - Windows native implementation using SHFileOperation
+- **NEW: Safe Deletion Folder** - Files moved to timestamped folder by default
+  - Checkbox to toggle between deletion folder and permanent deletion
+  - Default: Move to `WLC_Deleted/[timestamp]/` folder (safer - can be restored)
+  - Each cleanup operation creates a new timestamped folder
+  - Easy restoration by simply moving files back
+- **NEW: Real-time Progress Tracking**
+  - Visual progress bar showing percentage and file count
+  - Live status updates during operations
+  - Automatic scrolling to progress section for visibility
 - **NEW: Reorganized UI** - Primary and Secondary features clearly separated
   - PRIMARY: Orphaned Mods Cleanup (highlighted with high importance)
   - SECONDARY: Old Versions Cleanup (with warning about compatibility)
   - Warning labels about modlists requiring old versions
-  - Emojis for better visual navigation (🔍, 🧹, 📁, 🗑️, ⚠️, etc.)
+  - Emojis for better visual navigation (🔍, 🧹, 📁, 💾, ⚠️, etc.)
+  - About dialog with copyright and license information
+  - Footer with author attribution
 - **NEW: Simplified Directory Selection** - Only two folders needed
   - Step 1: Modlist folder (contains all .wabbajack files)
-  - Step 2: Downloads folder (contains game mod folders)
+  - Step 2: Downloads folder (parent folder or specific game folder)
+  - Supports both parent folder and single game folder selection
+- **NEW: Enhanced Screenshots** - Three detailed screenshots in README
+  - Main interface showing all features
+  - Orphaned mods scan with detailed results
+  - Old versions scan with duplicate detection
 - All features from v1.0.2 preserved and enhanced
 
 ### Removed
@@ -47,17 +59,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Main workflow completely redesigned for better UX
 - Modlist selection now happens in Step 1 (not in a separate dialog)
 - Actions reorganized to emphasize orphaned mods cleanup
-- Enhanced safety with Recycle Bin as default deletion method
+- Enhanced safety with deletion folder as default method
 - Better status messages and output formatting
+- Window size increased to 1200x900 for better visibility
+- Progress bar now shows percentage instead of infinite spinner
+- Improved error handling and user feedback
+- Operations run in goroutines to prevent UI freezing
+- Auto-scroll to progress section during operations
 
 ### Technical Details
 - Added `fyne.io/fyne/v2` GUI framework with Windows-specific features (Windows-only application)
 - New files:
-  - `gui.go`: Complete GUI implementation
+  - `gui.go`: Complete GUI implementation with progress tracking
   - `fileops.go`: File operation helpers
-  - `recyclebin_windows.go`: Windows Recycle Bin support
-  - `recyclebin_unix.go`: Unix/Linux stub (falls back to regular deletion)
-- Reorganized main() to support both GUI and CLI modes
+  - `recyclebin_windows.go`: Windows Recycle Bin support (legacy code, not actively used)
+  - `recyclebin_unix.go`: Unix/Linux stub (legacy code, not actively used)
+- Reorganized main() to support GUI-only mode
+- Enhanced file operations with timestamped backup folders
+- Improved concurrency handling for UI responsiveness
 
 ## 1.0.2 - 2025-11-12
 
