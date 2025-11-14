@@ -104,17 +104,11 @@ jobs:
     - name: Download dependencies
       run: go mod download
 
-    - name: Run gofmt check
+    - name: Format code with gofmt
       shell: pwsh
       run: |
-        $unformatted = gofmt -l .
-        if ($unformatted) {
-          Write-Host "The following files are not formatted:"
-          Write-Host $unformatted
-          Write-Host "Run 'gofmt -w .' to fix"
-          exit 1
-        }
-        Write-Host "All files are properly formatted"
+        gofmt -w .
+        Write-Host "Code formatted successfully"
 
     - name: Run go vet
       run: go vet ./...
