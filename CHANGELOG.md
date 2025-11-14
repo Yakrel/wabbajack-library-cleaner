@@ -5,6 +5,124 @@ All notable changes to Wabbajack Library Cleaner will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2.0.0 - 2025-11-14
+
+### Major Changes
+- **🖼️ Windows-Only GUI Application** - Complete rewrite as a GUI-only Windows application
+- **🚫 CLI Mode Removed** - Simplified to GUI only (Wabbajack is Windows-only anyway)
+- **🎯 Orphaned Mods = PRIMARY Feature** - Old versions cleanup is now secondary
+- **📁 Simplified Workflow** - Step-by-step process that's easier to understand
+
+### Added
+- **NEW: Auto-Scanning Modlists** - Select folder → Tool automatically scans for .wabbajack files
+  - Shows checkboxes for each found modlist
+  - All modlists selected by default
+  - "Select All" / "Deselect All" buttons
+  - No more separate dialogs - everything in one place
+- **NEW: Checkbox Modlist Selection** - Select which modlists you're currently using
+  - Check/uncheck modlists directly in the main window
+  - Clear visual indication of selected modlists
+  - Selected modlists used for orphaned mods detection
+- **NEW: Safe Deletion Folder** - Files moved to timestamped folder by default
+  - Checkbox to toggle between deletion folder and permanent deletion
+  - Default: Move to `WLC_Deleted/[timestamp]/` folder (safer - can be restored)
+  - Each cleanup operation creates a new timestamped folder
+  - Easy restoration by simply moving files back
+- **NEW: Real-time Progress Tracking**
+  - Visual progress bar showing percentage and file count
+  - Live status updates during operations
+  - Automatic scrolling to progress section for visibility
+- **NEW: Reorganized UI** - Primary and Secondary features clearly separated
+  - PRIMARY: Orphaned Mods Cleanup (highlighted with high importance)
+  - SECONDARY: Old Versions Cleanup (with warning about compatibility)
+  - Warning labels about modlists requiring old versions
+  - Emojis for better visual navigation (🔍, 🧹, 📁, 💾, ⚠️, etc.)
+  - About dialog with copyright and license information
+  - Footer with author attribution
+- **NEW: Simplified Directory Selection** - Only two folders needed
+  - Step 1: Modlist folder (contains all .wabbajack files)
+  - Step 2: Downloads folder (parent folder or specific game folder)
+  - Supports both parent folder and single game folder selection
+- **NEW: Enhanced Screenshots** - Three detailed screenshots in README
+  - Main interface showing all features
+  - Orphaned mods scan with detailed results
+  - Old versions scan with duplicate detection
+- All features from v1.0.2 preserved and enhanced
+
+### Removed
+- **CLI Mode Completely Removed** - GUI-only application now
+  - Simplified codebase
+  - Better user experience
+  - Windows-only focus (Wabbajack is Windows-only)
+
+### Changed
+- Main workflow completely redesigned for better UX
+- Modlist selection now happens in Step 1 (not in a separate dialog)
+- Actions reorganized to emphasize orphaned mods cleanup
+- Enhanced safety with deletion folder as default method
+- Better status messages and output formatting
+- Window size increased to 1200x900 for better visibility
+- Progress bar now shows percentage instead of infinite spinner
+- Improved error handling and user feedback
+- Operations run in goroutines to prevent UI freezing
+- Auto-scroll to progress section during operations
+
+### Technical Details
+- Added `fyne.io/fyne/v2` GUI framework with Windows-specific features (Windows-only application)
+- New files:
+  - `gui.go`: Complete GUI implementation with progress tracking
+  - `fileops.go`: File operation helpers
+- Reorganized main() to support GUI-only mode
+- Enhanced file operations with timestamped backup folders
+- Improved concurrency handling for UI responsiveness
+
+## 1.0.2 - 2025-11-12
+
+### Added
+- **FEATURE: Orphaned Mods Cleanup** - Remove mods not used by any active modlist
+  - Parses `.wabbajack` files to determine which mods are actually needed
+  - Interactive modlist selection (choose which modlists you're actively using)
+  - Detailed reporting showing used vs orphaned mods
+  - Typical space savings: 50-150 GB from deleted/inactive modlists
+  - Double confirmation required ("DELETE" in uppercase) for safety
+  - Automatic .meta file cleanup with main archives
+- **NEW: Statistics View** (Menu option 5)
+  - View total files and size across all game folders
+  - Breakdown by individual game
+- **Enhanced Menu System**
+  - Option 1: Scan folder (Dry-run) - Preview old versions
+  - Option 2: Clean folder - Delete old versions
+  - Option 3: Scan for orphaned mods (Dry-run) - Preview unused mods
+  - Option 4: Clean orphaned mods - Delete unused mods
+  - Option 5: View statistics
+  - Option 6: Exit
+
+### Technical Details
+- Added JSON parsing for `.wabbajack` files (ZIP archives)
+- Added `archive/zip` and `encoding/json` imports
+- New data structures:
+  - `ModlistArchive`: Represents archive entries in modlists
+  - `ModlistModState`: Contains ModID, FileID, GameName, etc.
+  - `Modlist`: Full modlist structure
+  - `ModlistInfo`: Tracking information for each modlist
+  - `OrphanedMod`: Represents an unused mod file
+- New functions:
+  - `findWabbajackFiles()`: Locates .wabbajack files
+  - `parseWabbajackFile()`: Extracts and parses modlist data
+  - `getAllModFiles()`: Collects all mod files from game folders
+  - `detectOrphanedMods()`: Classifies mods as used or orphaned
+  - `scanOrphanedMods()`: Main workflow for orphaned mods feature
+  - `showOrphanedReport()`: Displays detailed analysis
+  - `deleteOrphanedMods()`: Safely removes orphaned files
+  - `viewStatistics()`: Shows library statistics
+
+### Security
+- Orphaned mods feature includes multiple safety checks
+- Shared mods (used by multiple modlists) are always protected
+- File lock detection prevents deletion of in-use files
+- Dry-run mode required before actual deletion
+- All operations logged for audit trail
+
 ## 1.0.1 - 2025-10-29
 
 ### Fixed

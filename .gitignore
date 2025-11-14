@@ -3,15 +3,14 @@
 *.dll
 *.so
 *.dylib
+wabbajack-library-cleaner-test
+wabbajack-cleanup
 
 # Test binary, built with `go test -c`
 *.test
 
 # Output of the go coverage tool
 *.out
-
-# Windows resource files (auto-generated)
-*.syso
 
 # Go workspace file
 go.work

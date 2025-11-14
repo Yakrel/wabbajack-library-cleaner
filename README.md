@@ -1,84 +1,157 @@
-# Wabbajack Library Cleaner
+# Wabbajack Library Cleaner v2.0
 
-A tool to clean up old mod versions from your Wabbajack downloads folder, freeing up disk space.
+**A Windows-only GUI tool to clean orphaned mods and old versions from your Wabbajack downloads folder.**
 
-## 💡 The Problem
+## 💡 What Does It Do?
 
-When a modlist updates, Wabbajack downloads new mod versions but keeps the old ones. Over time, you end up with multiple versions of the same mods eating disk space.
+### PRIMARY: Orphaned Mods Cleanup (50-150 GB savings)
 
-Many users keep their downloads folder because they don't have Nexus Premium - re-downloading everything would be slow and painful. But this leads to bloated folders with duplicate versions.
+**The Problem:** You tried 5 modlists, kept 2, deleted 3. But those deleted modlists' mods are **still in your downloads folder wasting space!**
 
-This tool scans your downloads folder, identifies duplicate mod versions, and removes the old ones while keeping the newest.
+**The Solution:** This tool compares your mod files against your **active modlists** (using their `.wabbajack` files) and removes mods that aren't needed anymore.
 
-**⚠️ Important Note:** 
-- Not all modlists use the newest mod versions. There's a small chance you might delete a version that's actually needed.
-- Always run the dry-run preview (option 1) first to see what will be deleted.
-- If a needed version gets deleted, you can re-download it from Nexus.
-- Close MO2/Wabbajack before running this tool.
+**⚠️ You Need:** The `.wabbajack` files for ALL modlists you're currently using. Without them, the tool can't tell which mods to keep.
+
+### SECONDARY: Old Version Cleanup (10-30 GB savings)
+
+**The Problem:** Modlists update, Wabbajack downloads new versions, but old versions accumulate.
+
+**The Solution:** Keeps the newest version of each mod, removes old duplicates.
+
+**⚠️ Important:** Some modlists require specific OLD versions for compatibility. The tool's old version cleanup is based on **file timestamps only**, not the actual version your modlist needs. Use with caution!
 
 ## 📸 Screenshots
 
-### Preview Mode (Dry-Run)
-![Preview Mode](screenshots/preview.jpg)
-*Shows what will be deleted before making any changes*
+### Main Interface
+![Main Interface](screenshots/main-interface.png)
+*Main window showing modlist selection, deletion options, and action buttons*
 
-### Cleaning in Action
-![Cleaning](screenshots/cleaning.jpg)
-*Removing old versions and freeing up disk space*
+### Orphaned Mods Scan
+![Orphaned Mods Scan](screenshots/orphaned-scan.png)
+*Scanning and detecting mods not used by selected modlists*
 
-## 🎯 Features
+### Old Versions Scan
+![Old Versions Scan](screenshots/old-versions-scan.png)
+*Finding duplicate mod versions in selected folder*
 
-- **Smart Detection**: Groups mod versions by ModID and name
-- **Safe**: Keeps the newest version of each mod
-- **Preview First**: Dry-run mode shows what will be deleted before doing anything
-- **Interactive**: Simple menu to choose which folders to scan
-- **Logging**: All operations are logged
-- **Multi-Game Support**: Works with all game folders (Skyrim, Fallout 4, etc.)
+## ✨ Key Features
 
-## 🛡️ Safety Features
+- 🎯 **Orphaned Mods Cleanup** - Remove mods from deleted/inactive modlists (50-150 GB typical)
+- 📂 **Auto-Scan** - Automatically finds and displays all `.wabbajack` files
+- ✅ **Checkbox Selection** - Pick which modlists you're actively using
+- 🧠 **Smart Parsing** - Reads `.wabbajack` files to determine which mods are needed
+- 🛡️ **Shared Protection** - Mods used by multiple modlists are never deleted
+- ⚠️ **Old Version Cleanup** - Remove duplicate mod versions (use with caution!)
+- 💾 **Safe Deletion** - Deleted files moved to timestamped folder (can be restored!)
+- 🖌️ **Modern GUI** - Easy-to-use Windows interface
+- 📈 **Real-time Progress** - Visual progress bar with percentage and file count
+- 📊 **Statistics** - View library size by game
+- 📝 **Complete Logging** - All operations tracked with timestamps
 
-- Keeps the newest version of each mod
-- Skips files that are in use (file lock detection)
-- Asks for confirmation before deleting anything
-- Detailed logging with timestamps
-- Skips temporary/incomplete files (`.part`, `.tmp`)
+## 🛡️ Safety Protections
 
-## � Usage
+- 💾 **Deletion folder by default** - Files moved to timestamped folder (can be restored)
+- 🔍 **Preview mode** - See what will be deleted before confirming
+- ✋ **Confirmation dialogs** - Multiple checks before deletion
+- 🔒 **File lock detection** - Skips files in use
+- 🛡️ **Shared mod protection** - Never deletes mods used by checked modlists
+- 📝 **Complete logging** - All operations recorded
+- 🚫 **Smart filtering** - Skips temp files (`.part`, `.tmp`)
+
+## 📖 How to Use
+
+### Installation
 
 1. Download `wabbajack-library-cleaner.exe` from the [Releases](../../releases) page
-2. Place it in your Wabbajack downloads directory (the folder that contains your game folders like Skyrim, Fallout4, etc.)
-3. Run the executable
-4. Select option `1` to preview what will be deleted
-5. Select option `2` to actually delete old versions
+2. Double-click to launch - **No installation needed!**
 
-### Menu Options
+### Quick Start Guide
 
-1. **Scan folder (Dry-run)** - Preview what will be deleted
-2. **Clean folder** - Actually delete old versions
-3. **Exit**
+**Step 1: Select Modlist Folder**
+- Click **"📁 Select Modlist Folder"**
+- Navigate to the folder containing your `.wabbajack` files
+  - Common location: `C:\Users\YourName\AppData\Local\Wabbajack\downloaded_mod_lists\`
+  - Alternative: Wherever you keep your `.wabbajack` files
+- Tool auto-scans and displays all found modlists with checkboxes
+- **✅ Check ONLY the modlists you're actively using**
+
+**Step 2: Select Downloads Folder**
+- Click **"📁 Select Downloads Folder"**
+- Choose your Wabbajack downloads directory
+  - Example (parent folder): `F:\Wabbajack` (contains game folders like Fallout 4, Skyrim, etc.)
+  - Example (specific game): `F:\Wabbajack\Fallout 4` (if you only want to scan one game)
+- The tool will scan both the selected folder and its subfolders for mod files
+
+**Step 3: Configure Safety Options**
+- ✅ **"Move to deletion folder"** ← Recommended! (files moved to timestamped folder)
+  - Deletion folder location: `[Downloads]\WLC_Deleted\[timestamp]\`
+  - Example: `F:\Wabbajack\WLC_Deleted\2025-11-14_15-30-45\`
+  - You can restore files by simply moving them back
+  - Each cleanup operation creates a new timestamped folder
+- ❌ Uncheck for permanent deletion (⚠️ cannot be undone!)
+
+**Step 4: Clean Your Library**
+
+**🎯 PRIMARY: Clean Orphaned Mods** (Major space savings!)
+1. **"🔍 Scan for Orphaned Mods"** → Analyzes which mods are used by your selected modlists
+2. Review output: Shows used mods vs orphaned mods with file counts and sizes
+3. **"🧹 Clean Orphaned Mods"** → Moves orphaned mods to deletion folder after confirmation
+   - Progress bar shows real-time progress
+   - Files are moved (not deleted) so you can restore them
+
+**⚠️ SECONDARY: Clean Old Versions** (Use with caution!)
+- ⚠️ **Warning:** Your modlist may require old versions! This feature only looks at timestamps, not what your modlist actually needs.
+- Only use if you understand the risks
+1. **"🔍 Scan for Old Versions"** → Select a game folder to scan
+2. Review detected duplicates with version information
+3. **"🧹 Clean Old Versions"** → Removes old versions, keeps newest
+   - Use only if you're certain old versions aren't needed
+
+**📊 View Statistics**
+- See your mod library size breakdown by game
+
+### ⚠️ CRITICAL Requirements
+
+**For Orphaned Mods Cleanup:**
+- You **MUST** have the `.wabbajack` files for ALL modlists you're currently using
+- If a modlist's `.wabbajack` file is missing, the tool **will mark that modlist's mods as orphaned!**
+- After selecting modlists, **verify all YOUR ACTIVE modlists are checked**
+
+**For Old Versions Cleanup:**
+- Modlist version: This tool doesn't know which version your modlist actually uses
+- It only looks at file timestamps to find "newer" files
+- **Risk:** May delete an old version that your modlist specifically requires
+- **Recommendation:** Use orphaned mods cleanup instead - it's much safer!
 
 ### Compile from Source (Optional)
+
+**Requirements:**
+- Go 1.21 or later ([Download](https://go.dev/dl/))
+- MinGW-w64 GCC compiler (for GUI support)
+  - Install via: `choco install mingw` or `winget install -e --id jmeubank.tdm-gcc`
+  - Or download from: [TDM-GCC](https://jmeubank.github.io/tdm-gcc/download/)
+
+**Build Commands:**
 ```bash
-# Prerequisites: Go 1.25 or later
-go build -ldflags="-s -w" -o wabbajack-library-cleaner.exe
+set CGO_ENABLED=1
+go build -ldflags="-s -w -H=windowsgui" -o wabbajack-library-cleaner.exe
 ```
 
-## ️ Mod File Naming Convention
+**Note:** The icon is automatically embedded via `rsrc_windows_amd64.syso` (already included in repo).
 
-The tool recognizes Wabbajack/Nexus Mods file naming:
+## 📋 How It Works
 
+The tool parses Nexus Mods/Wabbajack filename format:
 ```
 ModName-ModID-Version-Timestamp.extension
 ```
 
-Example:
-```
-Alternate Perspective-50307-4-0-3-1731841209.zip
-├─ Mod Name: Alternate Perspective
-├─ Mod ID: 50307
-├─ Version: 4-0-3
-└─ Timestamp: 1731841209 (Unix timestamp)
-```
+Example: `Alternate Perspective-50307-4-0-3-1731841209.zip`
+- Mod ID: `50307` - Used to match against `.wabbajack` file's mod list
+- Timestamp: `1731841209` - Used for old version detection
+
+**For orphaned cleanup:** Matches ModID against your selected modlists' `.wabbajack` files  
+**For old version cleanup:** Groups by ModID, keeps newest timestamp
 
 ## 📝 Logging
 
@@ -97,35 +170,59 @@ Example log entries:
 
 ## 🔧 Technical Details
 
-### Supported Archive Formats
-- `.7z`
-- `.zip`
-- `.rar`
-- `.tar`
-- `.gz`
-- `.exe`
+- **Supported formats:** `.7z`, `.zip`, `.rar`, `.tar`, `.gz`, `.exe`
+- **Performance:** Fast scanning, low memory usage
+- **Deployment:** Single executable, no dependencies required
 
-### Performance
-- Fast scanning
-- Low memory usage
-- Single executable, no dependencies
+## 🐛 Common Issues
 
-## 🐛 Troubleshooting
+### Orphaned Mods Cleanup
 
-**"File is locked" error:** Close Mod Organizer 2 and Wabbajack before running
+**❌ "No .wabbajack files found"**
+- Make sure you're pointing to the correct folder containing `.wabbajack` files
+- Check: `C:\Users\YourName\AppData\Local\Wabbajack\downloaded_mod_lists\`
 
-**Many files skipped:** This is normal - the tool automatically skips `.meta` files and files with non-standard naming patterns. When a mod archive is deleted, its `.meta` file is also automatically deleted.
+**❌ "Too many mods marked as orphaned"**
+- Did you check ALL the modlists you're using?
+- **Missing .wabbajack file?** The tool can't know what to keep without it!
+- Solution: Re-download the modlist to get its `.wabbajack` file, then run the tool again
 
-**No duplicates found:** Your folder is already clean!
+**❌ "Failed to parse .wabbajack file"**
+- File may be corrupted - try re-downloading the modlist
 
-**Accidentally deleted a needed version:** You can re-download it from Nexus Mods
+**✅ "Shared mods being kept"**
+- This is correct! If ANY checked modlist uses a mod, it's kept safe
+
+### Old Version Cleanup
+
+**❌ "File is locked"**
+- Close Mod Organizer 2, Wabbajack, and any mod management tools
+
+**⚠️ "I deleted a version my modlist needs!"**
+- Old version cleanup is timestamp-based, not modlist-version-aware
+- The tool doesn't know which specific version your modlist requires
+- If this happens: Re-run Wabbajack to re-download the correct version
+
+**✅ "Many files skipped"**
+- Normal! Tool skips `.meta` files and non-standard filenames automatically
 
 ## 📜 License
 
 MIT License - see [LICENSE](LICENSE) file for details
 
+## 📊 Expected Space Savings
+
+Based on user reports:
+- **Old version cleanup:** 10-30 GB typical
+- **Orphaned mods cleanup:** 50-150 GB typical
+- **Combined:** 100+ GB possible!
+
+The orphaned mods feature is particularly effective if you've tried multiple modlists and deleted some of them.
+
 ---
 
-**Current Version:** v1.0.1
+**Current Version:** v2.0.0
+
+**Major Update:** Now with GUI interface and safe deletion folder!
 
 See [CHANGELOG](CHANGELOG.md) for version history.
