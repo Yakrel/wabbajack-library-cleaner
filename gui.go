@@ -752,18 +752,16 @@ func (g *GUIApp) performOrphanedScan(activeModlists []*ModlistInfo, deleteMode b
 	})
 
 	if deleteMode {
-		fyne.Do(func() {
-			g.confirmAndDelete(func() {
-				deleted, freed := g.deleteOrphanedModsWithRecycleBin(orphanedMods)
-				fyne.Do(func() {
-					g.appendOutput(fmt.Sprintf("\nDeleted: %d files", deleted))
-					g.appendOutput(fmt.Sprintf("Space freed: %s", formatSize(freed)))
-					g.setStatus(fmt.Sprintf("Completed: %d files deleted", deleted))
+		g.confirmAndDelete(func() {
+			deleted, freed := g.deleteOrphanedModsWithRecycleBin(orphanedMods)
+			fyne.Do(func() {
+				g.appendOutput(fmt.Sprintf("\nDeleted: %d files", deleted))
+				g.appendOutput(fmt.Sprintf("Space freed: %s", formatSize(freed)))
+				g.setStatus(fmt.Sprintf("Completed: %d files deleted", deleted))
 
-					dialog.ShowInformation("Cleanup Complete",
-						fmt.Sprintf("Deleted %d files\nSpace freed: %s", deleted, formatSize(freed)),
-						g.window)
-				})
+				dialog.ShowInformation("Cleanup Complete",
+					fmt.Sprintf("Deleted %d files\nSpace freed: %s", deleted, formatSize(freed)),
+					g.window)
 			})
 		})
 	} else {
@@ -916,17 +914,19 @@ func (g *GUIApp) deleteModFilesWithRecycleBin(files []ModFile) (int, int64) {
 
 	for i, file := range files {
 		// Update progress bar
+		currentIndex := i + 1
 		fyne.Do(func() {
-			g.progressBar.SetValue(float64(i + 1))
+			g.progressBar.SetValue(float64(currentIndex))
 
 			// Update status with detailed info
-			percentage := int(float64(i+1) / float64(totalFiles) * 100)
-			g.setStatus(fmt.Sprintf("Processing: %d/%d files (%d%%)", i+1, totalFiles, percentage))
+			percentage := int(float64(currentIndex) / float64(totalFiles) * 100)
+			g.setStatus(fmt.Sprintf("Processing: %d/%d files (%d%%)", currentIndex, totalFiles, percentage))
 		})
 
 		if isFileLocked(file.FullPath) {
+			fileName := file.FileName
 			fyne.Do(func() {
-				g.appendOutput(fmt.Sprintf("⚠ Skipped (locked): %s", file.FileName))
+				g.appendOutput(fmt.Sprintf("⚠ Skipped (locked): %s", fileName))
 			})
 			continue
 		}
@@ -941,8 +941,10 @@ func (g *GUIApp) deleteModFilesWithRecycleBin(files []ModFile) (int, int64) {
 		}
 
 		if err != nil {
+			fileName := file.FileName
+			errMsg := err
 			fyne.Do(func() {
-				g.appendOutput(fmt.Sprintf("✗ Failed to process: %s - %v", file.FileName, err))
+				g.appendOutput(fmt.Sprintf("✗ Failed to process: %s - %v", fileName, errMsg))
 			})
 			logError("Failed to process %s: %v", file.FullPath, err)
 			continue
@@ -951,13 +953,17 @@ func (g *GUIApp) deleteModFilesWithRecycleBin(files []ModFile) (int, int64) {
 		deletedCount++
 		spaceFreed += file.Size
 		if g.moveToBackup {
+			fileName := file.FileName
+			fileSize := file.Size
 			fyne.Do(func() {
-				g.appendOutput(fmt.Sprintf("✓ Moved: %s (%s)", file.FileName, formatSize(file.Size)))
+				g.appendOutput(fmt.Sprintf("✓ Moved: %s (%s)", fileName, formatSize(fileSize)))
 			})
 			logInfo("Moved to backup: %s (%s)", file.FileName, formatSize(file.Size))
 		} else {
+			fileName := file.FileName
+			fileSize := file.Size
 			fyne.Do(func() {
-				g.appendOutput(fmt.Sprintf("✓ Deleted: %s (%s)", file.FileName, formatSize(file.Size)))
+				g.appendOutput(fmt.Sprintf("✓ Deleted: %s (%s)", fileName, formatSize(fileSize)))
 			})
 			logInfo("Deleted: %s (%s)", file.FileName, formatSize(file.Size))
 		}
@@ -973,8 +979,10 @@ func (g *GUIApp) deleteModFilesWithRecycleBin(files []ModFile) (int, int64) {
 				metaErr = deleteFile(metaPath)
 			}
 			if metaErr != nil {
+				metaFileName := filepath.Base(metaPath)
+				metaError := metaErr
 				fyne.Do(func() {
-					g.appendOutput(fmt.Sprintf("⚠ Failed to process .meta file: %s - %v", filepath.Base(metaPath), metaErr))
+					g.appendOutput(fmt.Sprintf("⚠ Failed to process .meta file: %s - %v", metaFileName, metaError))
 				})
 				logWarning("Failed to process .meta file: %s - %v", metaPath, metaErr)
 			}
