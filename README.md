@@ -1,4 +1,4 @@
-# Wabbajack Library Cleaner v2.0
+# Wabbajack Library Cleaner
 
 Windows GUI tool to clean orphaned mods and old versions from your Wabbajack downloads folder.
 
