@@ -8,23 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 2.0.1 - 2025-11-15
 
 ### Fixed
-- **🐛 Critical: UI Thread Violations** - Fixed Fyne UI operations being called from goroutines
-  - Wrapped all UI operations with `fyne.Do()` to marshal calls to main UI thread
-  - Fixed issue causing 2M+ error log lines (225MB in 5 minutes)
-  - Eliminated "Error in Fyne call thread" warnings
-- **🐛 Loop Variable Capture Bugs** - Fixed closure capturing loop variables incorrectly
-  - Progress bar now shows correct file index during operations
-  - File names and sizes correctly displayed in UI messages
-  - Error messages now show accurate file information
-  - Prevents race conditions in asynchronous UI updates
-- **🔧 Code Quality** - Removed unnecessary `fyne.Do()` wrapper around `confirmAndDelete`
-  - Simplified code structure and reduced nesting
-  - Improved performance by eliminating redundant UI thread marshalling
-
-### Technical Details
-- All goroutine-spawned UI operations now properly synchronized with main thread
-- Loop variables captured by value before use in closures
-- Tested with 435 file deletions - no errors or warnings in logs
+- Fixed UI thread violations causing 2M+ error log lines
+- Fixed loop variable capture bugs in closures  
+- Removed unnecessary code nesting
+- Tested with 435 file deletions - no errors
 
 ## 2.0.0 - 2025-11-14
 
