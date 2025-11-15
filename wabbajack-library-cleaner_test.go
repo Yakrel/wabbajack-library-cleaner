@@ -16,6 +16,9 @@
 package main
 
 import (
+	"archive/zip"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -217,5 +220,244 @@ func TestNormalizeModName(t *testing.T) {
 				t.Errorf("normalizeModName(%q) = %q, want %q", tt.input, got, tt.want)
 			}
 		})
+	}
+}
+
+// TestIsPatchOrHotfix tests patch/hotfix detection
+func TestIsPatchOrHotfix(t *testing.T) {
+	tests := []struct {
+		filename string
+		want     bool
+	}{
+		{"SkyUI-Patch.7z", true},
+		{"Mod-Hotfix-123.zip", true},
+		{"Update-Main.rar", true},
+		{"Bug-Fix-1.0.7z", true},
+		{"Main File.7z", false},
+		{"Complete Version.zip", false},
+		{"Normal Mod-123-1-0.7z", false},
+		{"SomeRandomFile.rar", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.filename, func(t *testing.T) {
+			got := isPatchOrHotfix(tt.filename)
+			if got != tt.want {
+				t.Errorf("isPatchOrHotfix(%q) = %v, want %v", tt.filename, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestIsVersionPattern tests version pattern detection
+func TestIsVersionPattern(t *testing.T) {
+	tests := []struct {
+		input string
+		want  bool
+	}{
+		{"v1.0", true},
+		{"V2.3.4", true},
+		{"1.0", true},
+		{"0.18", true},
+		{"2-0-1", true},
+		{"3_5_2", true},
+		{"Part1", false},
+		{"Main", false},
+		{"abc", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got := isVersionPattern(tt.input)
+			if got != tt.want {
+				t.Errorf("isVersionPattern(%q) = %v, want %v", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestFindWabbajackFiles tests finding .wabbajack files in a directory
+func TestFindWabbajackFiles(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Create test files
+	wabbajackFile1 := filepath.Join(tempDir, "modlist1.wabbajack")
+	wabbajackFile2 := filepath.Join(tempDir, "modlist2.wabbajack")
+	otherFile := filepath.Join(tempDir, "readme.txt")
+
+	for _, file := range []string{wabbajackFile1, wabbajackFile2, otherFile} {
+		if err := os.WriteFile(file, []byte("test"), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	files, err := findWabbajackFiles(tempDir)
+	if err != nil {
+		t.Fatalf("findWabbajackFiles() error = %v", err)
+	}
+
+	if len(files) != 2 {
+		t.Errorf("Expected 2 .wabbajack files, got %d", len(files))
+	}
+
+	// Check that both wabbajack files were found
+	foundMap := make(map[string]bool)
+	for _, f := range files {
+		foundMap[filepath.Base(f)] = true
+	}
+
+	if !foundMap["modlist1.wabbajack"] || !foundMap["modlist2.wabbajack"] {
+		t.Errorf("Missing expected .wabbajack files. Found: %v", foundMap)
+	}
+}
+
+// TestParseWabbajackFile tests parsing a .wabbajack file
+func TestParseWabbajackFile(t *testing.T) {
+	tempDir := t.TempDir()
+	wabbajackPath := filepath.Join(tempDir, "test.wabbajack")
+
+	// Create a mock .wabbajack file (ZIP with JSON modlist)
+	zipFile, err := os.Create(wabbajackPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	zipWriter := zip.NewWriter(zipFile)
+
+	// Create modlist JSON content
+	modlistJSON := `{
+		"Name": "Test Modlist",
+		"Version": "1.0.0",
+		"Author": "Tester",
+		"Archives": [
+			{
+				"Hash": "abc123",
+				"Name": "Mod1.7z",
+				"Size": 1000000,
+				"State": {
+					"$type": "NexusMods",
+					"ModID": 12345,
+					"FileID": 67890,
+					"GameName": "Skyrim",
+					"Name": "Test Mod 1",
+					"Version": "1.0"
+				}
+			},
+			{
+				"Hash": "def456",
+				"Name": "Mod2.7z",
+				"Size": 2000000,
+				"State": {
+					"$type": "NexusMods",
+					"ModID": 54321,
+					"FileID": 98765,
+					"GameName": "Skyrim",
+					"Name": "Test Mod 2",
+					"Version": "2.0"
+				}
+			}
+		]
+	}`
+
+	// Write modlist file to ZIP
+	modlistFile, err := zipWriter.Create("modlist")
+	if err != nil {
+		zipFile.Close()
+		t.Fatal(err)
+	}
+	if _, err := modlistFile.Write([]byte(modlistJSON)); err != nil {
+		zipFile.Close()
+		t.Fatal(err)
+	}
+
+	zipWriter.Close()
+	zipFile.Close()
+
+	// Test parsing
+	// Temporarily disable logging for test
+	oldConfig := config
+	config = Config{LogFile: nil}
+	defer func() { config = oldConfig }()
+
+	info, err := parseWabbajackFile(wabbajackPath)
+	if err != nil {
+		t.Fatalf("parseWabbajackFile() error = %v", err)
+	}
+
+	// Verify parsed data
+	if info.Name != "Test Modlist" {
+		t.Errorf("Expected modlist name 'Test Modlist', got '%s'", info.Name)
+	}
+
+	if info.ModCount != 2 {
+		t.Errorf("Expected 2 archives, got %d", info.ModCount)
+	}
+
+	// Check UsedModKeys
+	if !info.UsedModKeys["12345"] {
+		t.Error("Expected ModID 12345 to be in UsedModKeys")
+	}
+	if !info.UsedModKeys["54321"] {
+		t.Error("Expected ModID 54321 to be in UsedModKeys")
+	}
+
+	// Check UsedModFileIDs
+	if !info.UsedModFileIDs["12345-67890"] {
+		t.Error("Expected ModID-FileID 12345-67890 to be in UsedModFileIDs")
+	}
+	if !info.UsedModFileIDs["54321-98765"] {
+		t.Error("Expected ModID-FileID 54321-98765 to be in UsedModFileIDs")
+	}
+}
+
+// TestGetAllModFiles tests collecting mod files from folders
+func TestGetAllModFiles(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Create game folders
+	gameFolder1 := filepath.Join(tempDir, "Skyrim")
+	gameFolder2 := filepath.Join(tempDir, "Fallout4")
+
+	if err := os.MkdirAll(gameFolder1, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(gameFolder2, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create valid mod files
+	validMod1 := filepath.Join(gameFolder1, "SkyUI-12345-5-0-1234567890.7z")
+	validMod2 := filepath.Join(gameFolder2, "F4SE-54321-1-0-9876543210.zip")
+	invalidMod := filepath.Join(gameFolder1, "NoModID.txt")
+
+	for _, file := range []string{validMod1, validMod2, invalidMod} {
+		if err := os.WriteFile(file, []byte("test content"), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Test getAllModFiles
+	files, err := getAllModFiles([]string{gameFolder1, gameFolder2})
+	if err != nil {
+		t.Fatalf("getAllModFiles() error = %v", err)
+	}
+
+	// Should find 2 valid mod files
+	if len(files) != 2 {
+		t.Errorf("Expected 2 valid mod files, got %d", len(files))
+	}
+
+	// Check that the correct files were found
+	foundModIDs := make(map[string]bool)
+	for _, f := range files {
+		foundModIDs[f.ModID] = true
+	}
+
+	if !foundModIDs["12345"] {
+		t.Error("Expected to find mod with ID 12345")
+	}
+	if !foundModIDs["54321"] {
+		t.Error("Expected to find mod with ID 54321")
 	}
 }

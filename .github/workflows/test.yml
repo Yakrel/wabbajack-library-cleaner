@@ -19,6 +19,17 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: '1.21'
+        cache: true
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~\AppData\Local\go-build
+          ~\go\pkg\mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
 
     - name: Install Fyne dependencies (Windows)
       shell: pwsh
@@ -29,13 +40,9 @@ jobs:
     - name: Download dependencies
       run: go mod download
 
-    - name: Run non-GUI tests only
-      run: go test -v -run "^(TestParseModFilename|TestDetectOrphanedMods|TestIsValidPath|TestFileExists|TestDeleteFile|TestIsNumeric)$" ./...
+    - name: Run tests with coverage
+      run: go test -v -coverprofile=coverage.txt -covermode=atomic ./...
       continue-on-error: false
-
-    - name: Run tests with coverage (non-GUI)
-      run: go test -v -coverprofile=coverage.txt -covermode=atomic -run "^(TestParseModFilename|TestDetectOrphanedMods|TestIsValidPath|TestFileExists|TestDeleteFile|TestIsNumeric)$" ./...
-      continue-on-error: true
 
     - name: Upload coverage
       uses: codecov/codecov-action@v4
@@ -58,6 +65,17 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: '1.21'
+        cache: true
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~\AppData\Local\go-build
+          ~\go\pkg\mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
 
     - name: Install Fyne dependencies (Windows)
       shell: pwsh
@@ -69,7 +87,7 @@ jobs:
       run: go mod download
 
     - name: Build Windows executable
-      run: go build -v -ldflags="-s -w -H=windowsgui" -o wabbajack-library-cleaner.exe
+      run: go build -trimpath -v -ldflags="-s -w -H=windowsgui" -o wabbajack-library-cleaner.exe
       continue-on-error: false
 
     - name: Verify build
@@ -100,20 +118,35 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: '1.21'
+        cache: true
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~\AppData\Local\go-build
+          ~\go\pkg\mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
 
     - name: Download dependencies
       run: go mod download
 
-    - name: Format code with gofmt
+    - name: Check code formatting
       shell: pwsh
       run: |
-        gofmt -w .
-        Write-Host "Code formatted successfully"
+        $unformatted = gofmt -l .
+        if ($unformatted) {
+          Write-Error "Code is not formatted. Run 'gofmt -w .' locally"
+          Write-Output $unformatted
+          exit 1
+        }
+        Write-Host "Code formatting OK"
 
     - name: Run go vet
       run: go vet ./...
-      # Note: go vet is validated during the build job which compiles the full application
-      continue-on-error: true
+      continue-on-error: false
 
     - name: golangci-lint
       uses: golangci/golangci-lint-action@v4

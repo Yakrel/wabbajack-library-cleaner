@@ -108,7 +108,7 @@ Download `wabbajack-library-cleaner.exe` from [Releases](../../releases). No ins
 **Build:**
 ```bash
 set CGO_ENABLED=1
-go build -ldflags="-s -w -H=windowsgui" -o wabbajack-library-cleaner.exe
+go build -trimpath -ldflags="-s -w -H=windowsgui" -o wabbajack-library-cleaner.exe
 ```
 
 ## How It Works
