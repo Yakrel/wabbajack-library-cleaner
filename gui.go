@@ -596,13 +596,15 @@ func (g *GUIApp) performOldVersionScan(folderPath string, deleteMode bool) {
 	if deleteMode {
 		g.confirmAndDelete(func() {
 			deleted, freed := g.deleteOldVersionsWithRecycleBin(duplicates)
-			g.appendOutput(fmt.Sprintf("\nDeleted: %d files", deleted))
-			g.appendOutput(fmt.Sprintf("Space freed: %s", formatSize(freed)))
-			g.setStatus(fmt.Sprintf("Completed: %d files deleted", deleted))
+			fyne.Do(func() {
+				g.appendOutput(fmt.Sprintf("\nDeleted: %d files", deleted))
+				g.appendOutput(fmt.Sprintf("Space freed: %s", formatSize(freed)))
+				g.setStatus(fmt.Sprintf("Completed: %d files deleted", deleted))
 
-			dialog.ShowInformation("Cleanup Complete",
-				fmt.Sprintf("Deleted %d files\nSpace freed: %s", deleted, formatSize(freed)),
-				g.window)
+				dialog.ShowInformation("Cleanup Complete",
+					fmt.Sprintf("Deleted %d files\nSpace freed: %s", deleted, formatSize(freed)),
+					g.window)
+			})
 		})
 	} else {
 		g.setStatus(fmt.Sprintf("Scan complete: %d old files found", totalFiles))
@@ -637,7 +639,9 @@ func (g *GUIApp) scanOrphanedMods(deleteMode bool) {
 	// Run scan in goroutine to prevent UI freeze
 	go func() {
 		defer func() {
-			g.progressBar.Hide()
+			fyne.Do(func() {
+				g.progressBar.Hide()
+			})
 		}()
 
 		// Perform the scan
@@ -648,44 +652,60 @@ func (g *GUIApp) scanOrphanedMods(deleteMode bool) {
 // performOrphanedScan performs the actual orphaned mods scan
 func (g *GUIApp) performOrphanedScan(activeModlists []*ModlistInfo, deleteMode bool) {
 	// Show progress bar for scanning phase
-	g.progressBar.Show()
-	g.progressBar.Min = 0
-	g.progressBar.Max = 100
-	g.progressBar.SetValue(0)
+	fyne.Do(func() {
+		g.progressBar.Show()
+		g.progressBar.Min = 0
+		g.progressBar.Max = 100
+		g.progressBar.SetValue(0)
 
-	// Scroll to progress section to make it visible
-	g.scrollContainer.ScrollToBottom()
+		// Scroll to progress section to make it visible
+		g.scrollContainer.ScrollToBottom()
+	})
 
 	// Get game folders
-	g.setStatus("Getting game folders...")
-	g.progressBar.SetValue(10)
+	fyne.Do(func() {
+		g.setStatus("Getting game folders...")
+		g.progressBar.SetValue(10)
+	})
 	gameFolders, err := getGameFolders(g.downloadsDir)
 	if err != nil {
-		g.progressBar.Hide()
-		dialog.ShowError(err, g.window)
+		fyne.Do(func() {
+			g.progressBar.Hide()
+			dialog.ShowError(err, g.window)
+		})
 		return
 	}
 
 	// Collect all mod files
-	g.setStatus("Collecting mod files...")
-	g.progressBar.SetValue(30)
-	g.appendOutput("\nCollecting mod files...")
+	fyne.Do(func() {
+		g.setStatus("Collecting mod files...")
+		g.progressBar.SetValue(30)
+		g.appendOutput("\nCollecting mod files...")
+	})
 	allModFiles, err := getAllModFiles(gameFolders)
 	if err != nil {
-		g.progressBar.Hide()
-		dialog.ShowError(err, g.window)
+		fyne.Do(func() {
+			g.progressBar.Hide()
+			dialog.ShowError(err, g.window)
+		})
 		return
 	}
-	g.appendOutput(fmt.Sprintf("Found %d mod files", len(allModFiles)))
+	fyne.Do(func() {
+		g.appendOutput(fmt.Sprintf("Found %d mod files", len(allModFiles)))
+	})
 
 	// Detect orphaned mods
-	g.setStatus("Analyzing mod usage...")
-	g.progressBar.SetValue(60)
-	g.appendOutput("Analyzing...")
+	fyne.Do(func() {
+		g.setStatus("Analyzing mod usage...")
+		g.progressBar.SetValue(60)
+		g.appendOutput("Analyzing...")
+	})
 	usedMods, orphanedMods := detectOrphanedMods(allModFiles, activeModlists)
 
-	g.progressBar.SetValue(90)
-	g.setStatus("Calculating results...")
+	fyne.Do(func() {
+		g.progressBar.SetValue(90)
+		g.setStatus("Calculating results...")
+	})
 
 	// Calculate sizes
 	usedSize := int64(0)
@@ -698,16 +718,20 @@ func (g *GUIApp) performOrphanedScan(activeModlists []*ModlistInfo, deleteMode b
 		orphanedSize += om.File.Size
 	}
 
-	g.appendOutput("\n=== RESULTS ===")
-	g.appendOutput(fmt.Sprintf("✓ USED MODS: %d files (%s)", len(usedMods), formatSize(usedSize)))
-	g.appendOutput(fmt.Sprintf("✗ ORPHANED MODS: %d files (%s)", len(orphanedMods), formatSize(orphanedSize)))
+	fyne.Do(func() {
+		g.appendOutput("\n=== RESULTS ===")
+		g.appendOutput(fmt.Sprintf("✓ USED MODS: %d files (%s)", len(usedMods), formatSize(usedSize)))
+		g.appendOutput(fmt.Sprintf("✗ ORPHANED MODS: %d files (%s)", len(orphanedMods), formatSize(orphanedSize)))
 
-	g.progressBar.SetValue(100)
-	g.progressBar.Hide()
+		g.progressBar.SetValue(100)
+		g.progressBar.Hide()
+	})
 
 	if len(orphanedMods) == 0 {
-		g.setStatus("No orphaned mods found")
-		dialog.ShowInformation("Scan Complete", "No orphaned mods found!", g.window)
+		fyne.Do(func() {
+			g.setStatus("No orphaned mods found")
+			dialog.ShowInformation("Scan Complete", "No orphaned mods found!", g.window)
+		})
 		return
 	}
 
@@ -716,31 +740,37 @@ func (g *GUIApp) performOrphanedScan(activeModlists []*ModlistInfo, deleteMode b
 	if exampleCount > 10 {
 		exampleCount = 10
 	}
-	g.appendOutput("\nExamples:")
-	for i := 0; i < exampleCount; i++ {
-		om := orphanedMods[i]
-		g.appendOutput(fmt.Sprintf("  • %s (%s)", om.File.FileName, formatSize(om.File.Size)))
-	}
-	if len(orphanedMods) > 10 {
-		g.appendOutput(fmt.Sprintf("  ... and %d more", len(orphanedMods)-10))
-	}
+	fyne.Do(func() {
+		g.appendOutput("\nExamples:")
+		for i := 0; i < exampleCount; i++ {
+			om := orphanedMods[i]
+			g.appendOutput(fmt.Sprintf("  • %s (%s)", om.File.FileName, formatSize(om.File.Size)))
+		}
+		if len(orphanedMods) > 10 {
+			g.appendOutput(fmt.Sprintf("  ... and %d more", len(orphanedMods)-10))
+		}
+	})
 
 	if deleteMode {
 		g.confirmAndDelete(func() {
 			deleted, freed := g.deleteOrphanedModsWithRecycleBin(orphanedMods)
-			g.appendOutput(fmt.Sprintf("\nDeleted: %d files", deleted))
-			g.appendOutput(fmt.Sprintf("Space freed: %s", formatSize(freed)))
-			g.setStatus(fmt.Sprintf("Completed: %d files deleted", deleted))
+			fyne.Do(func() {
+				g.appendOutput(fmt.Sprintf("\nDeleted: %d files", deleted))
+				g.appendOutput(fmt.Sprintf("Space freed: %s", formatSize(freed)))
+				g.setStatus(fmt.Sprintf("Completed: %d files deleted", deleted))
 
-			dialog.ShowInformation("Cleanup Complete",
-				fmt.Sprintf("Deleted %d files\nSpace freed: %s", deleted, formatSize(freed)),
-				g.window)
+				dialog.ShowInformation("Cleanup Complete",
+					fmt.Sprintf("Deleted %d files\nSpace freed: %s", deleted, formatSize(freed)),
+					g.window)
+			})
 		})
 	} else {
-		g.setStatus(fmt.Sprintf("Scan complete: %d orphaned mods", len(orphanedMods)))
-		dialog.ShowInformation("Scan Complete",
-			fmt.Sprintf("Found %d orphaned mods\nPotential space: %s", len(orphanedMods), formatSize(orphanedSize)),
-			g.window)
+		fyne.Do(func() {
+			g.setStatus(fmt.Sprintf("Scan complete: %d orphaned mods", len(orphanedMods)))
+			dialog.ShowInformation("Scan Complete",
+				fmt.Sprintf("Found %d orphaned mods\nPotential space: %s", len(orphanedMods), formatSize(orphanedSize)),
+				g.window)
+		})
 	}
 }
 
@@ -860,32 +890,44 @@ func (g *GUIApp) deleteModFilesWithRecycleBin(files []ModFile) (int, int64) {
 		backupDir = filepath.Join(g.downloadsDir, "WLC_Deleted", timestamp)
 		err := os.MkdirAll(backupDir, 0755)
 		if err != nil {
-			g.appendOutput(fmt.Sprintf("❌ Failed to create backup folder: %v", err))
+			fyne.Do(func() {
+				g.appendOutput(fmt.Sprintf("❌ Failed to create backup folder: %v", err))
+				g.progressBar.Hide()
+			})
 			logError("Failed to create backup folder: %v", err)
-			g.progressBar.Hide()
 			return 0, 0
 		}
-		g.appendOutput(fmt.Sprintf("📁 Created backup folder: %s", backupDir))
+		fyne.Do(func() {
+			g.appendOutput(fmt.Sprintf("📁 Created backup folder: %s", backupDir))
+		})
 	}
 
 	// Show progress bar if we have files to delete
 	if totalFiles > 0 {
-		g.progressBar.Min = 0
-		g.progressBar.Max = float64(totalFiles)
-		g.progressBar.SetValue(0)
-		g.progressBar.Show()
+		fyne.Do(func() {
+			g.progressBar.Min = 0
+			g.progressBar.Max = float64(totalFiles)
+			g.progressBar.SetValue(0)
+			g.progressBar.Show()
+		})
 	}
 
 	for i, file := range files {
 		// Update progress bar
-		g.progressBar.SetValue(float64(i + 1))
+		currentIndex := i + 1
+		fyne.Do(func() {
+			g.progressBar.SetValue(float64(currentIndex))
 
-		// Update status with detailed info
-		percentage := int(float64(i+1) / float64(totalFiles) * 100)
-		g.setStatus(fmt.Sprintf("Processing: %d/%d files (%d%%)", i+1, totalFiles, percentage))
+			// Update status with detailed info
+			percentage := int(float64(currentIndex) / float64(totalFiles) * 100)
+			g.setStatus(fmt.Sprintf("Processing: %d/%d files (%d%%)", currentIndex, totalFiles, percentage))
+		})
 
 		if isFileLocked(file.FullPath) {
-			g.appendOutput(fmt.Sprintf("⚠ Skipped (locked): %s", file.FileName))
+			fileName := file.FileName
+			fyne.Do(func() {
+				g.appendOutput(fmt.Sprintf("⚠ Skipped (locked): %s", fileName))
+			})
 			continue
 		}
 
@@ -899,7 +941,11 @@ func (g *GUIApp) deleteModFilesWithRecycleBin(files []ModFile) (int, int64) {
 		}
 
 		if err != nil {
-			g.appendOutput(fmt.Sprintf("✗ Failed to process: %s - %v", file.FileName, err))
+			fileName := file.FileName
+			errMsg := err
+			fyne.Do(func() {
+				g.appendOutput(fmt.Sprintf("✗ Failed to process: %s - %v", fileName, errMsg))
+			})
 			logError("Failed to process %s: %v", file.FullPath, err)
 			continue
 		}
@@ -907,10 +953,18 @@ func (g *GUIApp) deleteModFilesWithRecycleBin(files []ModFile) (int, int64) {
 		deletedCount++
 		spaceFreed += file.Size
 		if g.moveToBackup {
-			g.appendOutput(fmt.Sprintf("✓ Moved: %s (%s)", file.FileName, formatSize(file.Size)))
+			fileName := file.FileName
+			fileSize := file.Size
+			fyne.Do(func() {
+				g.appendOutput(fmt.Sprintf("✓ Moved: %s (%s)", fileName, formatSize(fileSize)))
+			})
 			logInfo("Moved to backup: %s (%s)", file.FileName, formatSize(file.Size))
 		} else {
-			g.appendOutput(fmt.Sprintf("✓ Deleted: %s (%s)", file.FileName, formatSize(file.Size)))
+			fileName := file.FileName
+			fileSize := file.Size
+			fyne.Do(func() {
+				g.appendOutput(fmt.Sprintf("✓ Deleted: %s (%s)", fileName, formatSize(fileSize)))
+			})
 			logInfo("Deleted: %s (%s)", file.FileName, formatSize(file.Size))
 		}
 
@@ -925,14 +979,20 @@ func (g *GUIApp) deleteModFilesWithRecycleBin(files []ModFile) (int, int64) {
 				metaErr = deleteFile(metaPath)
 			}
 			if metaErr != nil {
-				g.appendOutput(fmt.Sprintf("⚠ Failed to process .meta file: %s - %v", filepath.Base(metaPath), metaErr))
+				metaFileName := filepath.Base(metaPath)
+				metaError := metaErr
+				fyne.Do(func() {
+					g.appendOutput(fmt.Sprintf("⚠ Failed to process .meta file: %s - %v", metaFileName, metaError))
+				})
 				logWarning("Failed to process .meta file: %s - %v", metaPath, metaErr)
 			}
 		}
 	}
 
 	// Hide progress bar when done
-	g.progressBar.Hide()
+	fyne.Do(func() {
+		g.progressBar.Hide()
+	})
 
 	return deletedCount, spaceFreed
 }
