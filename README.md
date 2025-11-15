@@ -4,17 +4,17 @@ Windows GUI tool to clean orphaned mods and old versions from your Wabbajack dow
 
 ## What It Does
 
-### PRIMARY: Orphaned Mods Cleanup (50-150 GB typical)
+### PRIMARY: Orphaned Mods Cleanup
 
 Removes mods from deleted/inactive modlists. Compares your files against active modlists using `.wabbajack` files.
 
 **Requires:** `.wabbajack` files for ALL active modlists. Without them, tool can't tell which mods to keep.
 
-### SECONDARY: Old Version Cleanup (10-30 GB typical)
+### SECONDARY: Old Version Cleanup
 
 Keeps newest version of each mod, removes old duplicates.
 
-**Warning:** Based on file timestamps only, not actual modlist requirements. Use with caution.
+**Warning:** Use with caution. Complex detection system with multiple safety checks, but may still remove versions your modlist needs.
 
 ## Screenshots
 
@@ -24,11 +24,11 @@ Keeps newest version of each mod, removes old duplicates.
 
 ## Features
 
-- Orphaned mods cleanup (50-150 GB typical)
+- Orphaned mods cleanup
 - Auto-scan for `.wabbajack` files
 - Checkbox modlist selection
 - Shared mod protection (never deletes mods used by multiple modlists)
-- Old version cleanup (use with caution)
+- Old version cleanup with safety checks (use with caution)
 - Safe deletion folder (timestamped, restorable)
 - Windows GUI
 - Real-time progress bar
@@ -94,7 +94,8 @@ Download `wabbajack-library-cleaner.exe` from [Releases](../../releases). No ins
 - Verify all active modlists are checked
 
 **Old Versions:**
-- Tool uses timestamps only, not actual modlist requirements
+- Checks timestamps, file sizes, patch detection, content descriptors, version normalization
+- Has safety checks but may still miss edge cases
 - May delete old versions your modlist needs
 - Use orphaned cleanup instead (safer)
 
@@ -150,7 +151,7 @@ Operations logged to: `wabbajack-library-cleaner_YYYY-MM-DD_HH-MM-SS.log`
 - Close MO2, Wabbajack, mod tools
 
 **"Deleted version my modlist needs"**
-- Old version cleanup uses timestamps, not modlist requirements
+- Old version cleanup has multiple safety checks but may miss edge cases
 - Re-run Wabbajack to re-download
 
 **"Many files skipped"**
@@ -162,9 +163,7 @@ MIT - see [LICENSE](LICENSE)
 
 ## Expected Savings
 
-- Old versions: 10-30 GB
-- Orphaned mods: 50-150 GB
-- Combined: 100+ GB
+Space savings depend on number of modlists, mods, and file sizes. Can range from a few GB to hundreds of GB.
 
 ---
 
