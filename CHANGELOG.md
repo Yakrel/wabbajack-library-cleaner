@@ -16,184 +16,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 2.0.0 - 2025-11-14
 
 ### Major Changes
-- **🖼️ Windows-Only GUI Application** - Complete rewrite as a GUI-only Windows application
-- **🚫 CLI Mode Removed** - Simplified to GUI only (Wabbajack is Windows-only anyway)
-- **🎯 Orphaned Mods = PRIMARY Feature** - Old versions cleanup is now secondary
-- **📁 Simplified Workflow** - Step-by-step process that's easier to understand
+- Complete rewrite as Windows-only GUI application
+- CLI mode removed
+- Orphaned mods cleanup is now the primary feature
+- Simplified step-by-step workflow
 
 ### Added
-- **NEW: Auto-Scanning Modlists** - Select folder → Tool automatically scans for .wabbajack files
-  - Shows checkboxes for each found modlist
-  - All modlists selected by default
-  - "Select All" / "Deselect All" buttons
-  - No more separate dialogs - everything in one place
-- **NEW: Checkbox Modlist Selection** - Select which modlists you're currently using
-  - Check/uncheck modlists directly in the main window
-  - Clear visual indication of selected modlists
-  - Selected modlists used for orphaned mods detection
-- **NEW: Safe Deletion Folder** - Files moved to timestamped folder by default
-  - Checkbox to toggle between deletion folder and permanent deletion
-  - Default: Move to `WLC_Deleted/[timestamp]/` folder (safer - can be restored)
-  - Each cleanup operation creates a new timestamped folder
-  - Easy restoration by simply moving files back
-- **NEW: Real-time Progress Tracking**
-  - Visual progress bar showing percentage and file count
-  - Live status updates during operations
-  - Automatic scrolling to progress section for visibility
-- **NEW: Reorganized UI** - Primary and Secondary features clearly separated
-  - PRIMARY: Orphaned Mods Cleanup (highlighted with high importance)
-  - SECONDARY: Old Versions Cleanup (with warning about compatibility)
-  - Warning labels about modlists requiring old versions
-  - Emojis for better visual navigation (🔍, 🧹, 📁, 💾, ⚠️, etc.)
-  - About dialog with copyright and license information
-  - Footer with author attribution
-- **NEW: Simplified Directory Selection** - Only two folders needed
-  - Step 1: Modlist folder (contains all .wabbajack files)
-  - Step 2: Downloads folder (parent folder or specific game folder)
-  - Supports both parent folder and single game folder selection
-- **NEW: Enhanced Screenshots** - Three detailed screenshots in README
-  - Main interface showing all features
-  - Orphaned mods scan with detailed results
-  - Old versions scan with duplicate detection
-- All features from v1.0.2 preserved and enhanced
+- Auto-scanning for .wabbajack files with checkboxes
+- Safe deletion folder (files moved to timestamped backup)
+- Real-time progress bar with percentage
+- Reorganized UI with primary/secondary feature separation
+- About dialog with license info
+- Support for both parent and single game folder selection
 
 ### Removed
-- **CLI Mode Completely Removed** - GUI-only application now
-  - Simplified codebase
-  - Better user experience
-  - Windows-only focus (Wabbajack is Windows-only)
+- CLI mode completely removed
 
 ### Changed
-- Main workflow completely redesigned for better UX
-- Modlist selection now happens in Step 1 (not in a separate dialog)
-- Actions reorganized to emphasize orphaned mods cleanup
-- Enhanced safety with deletion folder as default method
-- Better status messages and output formatting
-- Window size increased to 1200x900 for better visibility
-- Progress bar now shows percentage instead of infinite spinner
-- Improved error handling and user feedback
-- Operations run in goroutines to prevent UI freezing
+- Modlist selection in main window (no separate dialogs)
+- Deletion folder enabled by default
+- Window size increased to 1200x900
+- Operations run in goroutines (no UI freeze)
 - Auto-scroll to progress section during operations
-
-### Technical Details
-- Added `fyne.io/fyne/v2` GUI framework with Windows-specific features (Windows-only application)
-- New files:
-  - `gui.go`: Complete GUI implementation with progress tracking
-  - `fileops.go`: File operation helpers
-- Reorganized main() to support GUI-only mode
-- Enhanced file operations with timestamped backup folders
-- Improved concurrency handling for UI responsiveness
 
 ## 1.0.2 - 2025-11-12
 
 ### Added
-- **FEATURE: Orphaned Mods Cleanup** - Remove mods not used by any active modlist
-  - Parses `.wabbajack` files to determine which mods are actually needed
-  - Interactive modlist selection (choose which modlists you're actively using)
-  - Detailed reporting showing used vs orphaned mods
-  - Typical space savings: 50-150 GB from deleted/inactive modlists
-  - Double confirmation required ("DELETE" in uppercase) for safety
-  - Automatic .meta file cleanup with main archives
-- **NEW: Statistics View** (Menu option 5)
-  - View total files and size across all game folders
-  - Breakdown by individual game
-- **Enhanced Menu System**
-  - Option 1: Scan folder (Dry-run) - Preview old versions
-  - Option 2: Clean folder - Delete old versions
-  - Option 3: Scan for orphaned mods (Dry-run) - Preview unused mods
-  - Option 4: Clean orphaned mods - Delete unused mods
-  - Option 5: View statistics
-  - Option 6: Exit
-
-### Technical Details
-- Added JSON parsing for `.wabbajack` files (ZIP archives)
-- Added `archive/zip` and `encoding/json` imports
-- New data structures:
-  - `ModlistArchive`: Represents archive entries in modlists
-  - `ModlistModState`: Contains ModID, FileID, GameName, etc.
-  - `Modlist`: Full modlist structure
-  - `ModlistInfo`: Tracking information for each modlist
-  - `OrphanedMod`: Represents an unused mod file
-- New functions:
-  - `findWabbajackFiles()`: Locates .wabbajack files
-  - `parseWabbajackFile()`: Extracts and parses modlist data
-  - `getAllModFiles()`: Collects all mod files from game folders
-  - `detectOrphanedMods()`: Classifies mods as used or orphaned
-  - `scanOrphanedMods()`: Main workflow for orphaned mods feature
-  - `showOrphanedReport()`: Displays detailed analysis
-  - `deleteOrphanedMods()`: Safely removes orphaned files
-  - `viewStatistics()`: Shows library statistics
+- Orphaned mods cleanup feature
+  - Parses .wabbajack files to determine needed mods
+  - Interactive modlist selection
+  - Typical space savings: 50-150 GB
+- Statistics view showing library breakdown by game
+- Enhanced menu with 6 options
 
 ### Security
-- Orphaned mods feature includes multiple safety checks
-- Shared mods (used by multiple modlists) are always protected
-- File lock detection prevents deletion of in-use files
-- Dry-run mode required before actual deletion
-- All operations logged for audit trail
+- Double confirmation required for orphaned mods deletion
+- Shared mods always protected
+- File lock detection
 
 ## 1.0.1 - 2025-10-29
 
 ### Fixed
-- **Critical:** Fixed duplicate detection algorithm to correctly identify mod versions
-  - Now uses ModID + normalized ModName + part indicator instead of just ModID
-  - Prevents accidental deletion of different files from same mod page (e.g., "Armor" vs "Hair" files)
-  - **Multi-part mod protection:** Keeps parts separate (e.g., "Mod -1- Meshes" and "Mod -2- Textures" are NOT grouped)
-    - Detects patterns: `-1-`, `-2-`, `Part 1`, `Part 2`, `(Part 1)`, `Pt1`, etc.
-    - Prevents accidental deletion of required mod components
-  - Added version pattern normalization to group different versions of same file (e.g., "Interface 1.3.6" and "Interface 1.4.0" are now correctly grouped)
-  - Added timestamp uniqueness check to prevent grouping identical files
-  - **Enhanced Safety:** Detects and skips same-version files with different content (variants)
-    - Skips files with same version but 10x+ size difference (e.g., "ESP only" vs "Full textures")
-    - Skips files uploaded within 1 hour with same version (likely different variants like "CLEAN" vs "DIRTY")
-  - **Patch/Hotfix Detection:** Prevents deletion of base files when only patches/hotfixes are present
-    - Detects patch keywords: "patch", "hotfix", "update", "fix" in filenames
-    - Skips groups where newest file is <10% size of older versions (likely a patch that needs the base file)
-    - Skips groups containing both "PATCH" and "MAIN" labeled files
-    - Prevents accidental deletion of full mod files when keeping small patches
-  - **Content Descriptor Detection:** Prevents grouping files with different content types
-    - Detects 8 categories of descriptors: texture quality (1K/2K/4K/8K), body types (CBBE/UUNP), mod components (armor/weapons/clothes), file types (ESP/ESM), compatibility variants (ASLAL/No Worldspace), editions (Lite/Full/Extended), clean variants, and optional content
-    - Skips groups where files have different descriptors (e.g., "2K Textures" vs "Gloves Only")
-    - Skips groups where one file has descriptors but another doesn't (e.g., "No Worldspace Edits" vs base version)
-    - Prevents accidental deletion of different variants or mod components
-- Improved safety: Will not delete files if all timestamps are identical
+- Fixed duplicate detection algorithm
+  - Now uses ModID + normalized ModName + part indicator
+  - Multi-part mod protection (e.g., "-1- Meshes" and "-2- Textures" kept separate)
+  - Version pattern normalization
+  - Timestamp uniqueness check
+- Enhanced safety checks
+  - Detects same-version files with different content (10x+ size difference)
+  - Patch/hotfix detection to preserve base files
+  - Content descriptor detection (texture quality, body types, etc.)
+- Won't delete files if all timestamps are identical
 
 ### Added
 - Application icon with transparency
-- Enhanced duplicate grouping algorithm with version normalization
-- Suspicious pattern detection for same-version different-content files
-- Patch/hotfix detection system to preserve base files
-- Comprehensive logging of skipped groups for audit purposes
+- Comprehensive logging of skipped groups
 
 ## 1.0.0 - 2025-10-28
 
-### Added
-- Initial release
-- Smart mod version detection using ModID and timestamp
-- Interactive menu system with 6 options
-- Dry-run mode for safe preview
-- Comprehensive safety checks:
-  - File lock detection
-  - Newest version protection
-  - Mod group validation
-  - Temp file filtering
-- Detailed logging with timestamps
-- Size-based filtering option
-- Multi-game support (Skyrim, Fallout 4, Fallout 3-NV, etc.)
+Initial CLI release.
+
+### Features
+- Mod version detection using ModID and timestamp
+- Interactive menu system
+- Dry-run mode
+- Safety checks (file locks, version protection, group validation)
+- Size-based filtering
+- Multi-game support
 - Automatic .meta file cleanup
-- Color-coded terminal output
-- Double confirmation for deletion operations
-
-### Security
-- Never deletes the newest version
-- Validates file patterns before processing
-- Skips files in use by other programs
-- Logs all operations for audit trail
-
-### Performance
-- Fast scanning (~10,000 files/second)
-- Low memory footprint
-- Compiled binary size: 2.8 MB
-- No external dependencies
+- Deletion logging
 
 ---
 
