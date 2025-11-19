@@ -39,7 +39,7 @@ jobs:
     - name: Download dependencies
       run: go mod download
 
-    # DÜZELTME 1: Paket ismi yerine ./... kullanılarak tüm testlerin çalışması sağlandı
+    # FIXED: Used ./... to run tests for all packages instead of a specific folder name
     - name: Run tests with coverage
       run: go test -v -coverprofile=coverage.txt -covermode=atomic ./...
       continue-on-error: false
@@ -50,7 +50,7 @@ jobs:
         file: ./coverage.txt
         flags: unittests
         name: codecov-umbrella
-        token: ${{ secrets.CODECOV_TOKEN }} # Eğer token yoksa hata verebilir, public repolarda bazen gerekmeyebilir.
+        token: ${{ secrets.CODECOV_TOKEN }}
       continue-on-error: true
 
   build:
@@ -123,19 +123,16 @@ jobs:
     - name: Download dependencies
       run: go mod download
 
-    # DÜZELTME 2: Format hatası build'i kırmasın diye "exit 1" kaldırıldı.
-    # Sadece uyarı verecek.
     - name: Check code formatting
       shell: pwsh
       run: |
         $unformatted = gofmt -l .
         if ($unformatted) {
-          Write-Warning "Code is not formatted properly according to gofmt."
+          Write-Error "Code is not formatted. Run 'gofmt -w .' locally"
           Write-Output $unformatted
-          # exit 1 # Bu satır hataları görmezden gelmek için devre dışı bırakıldı
-        } else {
-          Write-Host "Code formatting OK"
+          exit 1
         }
+        Write-Host "Code formatting OK"
 
     - name: Run go vet
       run: go vet ./...
