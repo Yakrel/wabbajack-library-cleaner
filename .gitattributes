@@ -1,5 +1,5 @@
 # .gitattributes
-
+# Force LF line endings for Go and configuration files to satisfy gofmt and linters
 *.go text eol=lf
 *.mod text eol=lf
 *.sum text eol=lf
@@ -7,6 +7,7 @@
 *.yaml text eol=lf
 *.json text eol=lf
 
+# Treat binary files as binaries (do not modify line endings)
 *.png binary
 *.jpg binary
 *.ico binary
