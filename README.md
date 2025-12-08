@@ -22,6 +22,27 @@ Keeps newest version of each mod, removes old duplicates.
 ![Orphaned Mods Scan](screenshots/orphaned-scan.png)
 ![Old Versions Scan](screenshots/old-versions-scan.png)
 
+## Technical Architecture
+
+This tool is built with a focus on **Reverse Engineering** and **System Safety**. It parses proprietary file formats and employs heuristic algorithms to ensure data integrity.
+
+### 1. Reverse Engineering & Parsing
+- **Wabbajack Archive Analysis:** The tool reverse-engineers the `.wabbajack` file format (which is a custom ZIP structure containing a JSON manifest).
+- **Dependency Mapping:** It parses the internal `modlist` JSON to extract `ModID` and `FileID` pairs, creating a precise dependency map of your active modlists.
+- **Intelligent Matching:** 
+  - **Precise Match:** Checks `ModID + FileID` for exact version matching.
+  - **Fuzzy Match:** Fallback to `ModID` only to prevent accidental deletion of valid variants.
+
+### 2. Heuristic Analysis
+- **Version Normalization:** Uses custom string parsing logic (no heavy regex) to normalize version numbers (e.g., treating `Interface 1.3.6` and `Interface 1.4.0` as the same mod group).
+- **Patch Detection:** Implements a heuristic size analysis algorithm (size ratio < 0.1) to intelligently distinguish between full mod updates and small hotfixes/patches, preventing the deletion of required base files.
+- **Context Awareness:** Detects content descriptors (e.g., "1K" vs "4K", "CBBE" vs "UNP") to avoid flagging different mod variants as duplicates.
+
+### 3. System Safety & Concurrency
+- **Atomic Operations:** File deletions are simulated first (Dry-Run). Actual deletions can be performed as "Move" operations to a timestamped backup folder, ensuring zero data loss.
+- **File Locking:** Direct interaction with Windows syscalls to detect if a file is locked by another process (e.g., Mod Organizer 2), preventing corruption.
+- **Asynchronous Scanning:** Built with Go's goroutines to perform non-blocking parallel file scanning, keeping the Fyne GUI responsive even with libraries containing 100,000+ files.
+
 ## Features
 
 - Orphaned mods cleanup
@@ -30,20 +51,10 @@ Keeps newest version of each mod, removes old duplicates.
 - Shared mod protection (never deletes mods used by multiple modlists)
 - Old version cleanup with safety checks (use with caution)
 - Safe deletion folder (timestamped, restorable)
-- Windows GUI
-- Real-time progress bar
+- Windows GUI (Fyne Framework)
+- Real-time progress bar & async processing
 - Statistics view
 - Complete logging
-
-## Safety Features
-
-- Deletion folder by default (timestamped, restorable)
-- Preview mode before deletion
-- Confirmation dialogs
-- File lock detection
-- Shared mod protection
-- Complete logging
-- Skips temp files (`.part`, `.tmp`)
 
 ## Usage
 
