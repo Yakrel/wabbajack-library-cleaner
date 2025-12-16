@@ -41,7 +41,7 @@ jobs:
 
     # FIXED: Used ./... to run tests for all packages instead of a specific folder name
     - name: Run tests with coverage
-      run: go test -v -coverprofile=coverage.txt -covermode=atomic ./...
+      run: go test -v -coverprofile coverage.txt -covermode atomic ./...
       continue-on-error: false
 
     - name: Upload coverage
