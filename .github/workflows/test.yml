@@ -1,146 +1,113 @@
-name: Test and Build
+name: Build and Release
 
 on:
   push:
-    branches: [ main, pr-3 ]
-  pull_request:
-    branches: [ main ]
+    tags:
+      - "v*" # Triggers on tags like v2.1.0
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
-  test:
-    name: Run Tests
-    runs-on: windows-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.21'
-        cache: true
-
-    - name: Cache Go modules
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~\AppData\Local\go-build
-          ~\go\pkg\mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-
-    - name: Install Fyne dependencies (Windows)
-      shell: pwsh
-      run: |
-        echo "Windows GUI dependencies are built-in"
-
-    - name: Download dependencies
-      run: go mod download
-
-    # FIXED: Used ./... to run tests for all packages instead of a specific folder name
-    - name: Run tests with coverage
-      run: go test -v -coverprofile coverage.txt -covermode atomic ./...
-      continue-on-error: false
-
-    - name: Upload coverage
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.txt
-        flags: unittests
-        name: codecov-umbrella
-        token: ${{ secrets.CODECOV_TOKEN }}
-      continue-on-error: true
-
   build:
-    name: Build Application
-    runs-on: windows-latest
-    needs: test
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            asset_name: wabbajack-library-cleaner-windows.zip
+            executable_path: target/release/wabbajack-library-cleaner.exe
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            asset_name: wabbajack-library-cleaner-linux.tar.gz
+            executable_path: target/release/wabbajack-library-cleaner
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.21'
-        cache: true
+    - name: Install Linux Dependencies
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-dev libsoup-3.0-dev libwebkit2gtk-4.1-dev
 
-    - name: Cache Go modules
-      uses: actions/cache@v4
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
       with:
-        path: |
-          ~\AppData\Local\go-build
-          ~\go\pkg\mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
+        toolchain: stable
 
-    - name: Install Fyne dependencies (Windows)
+    - name: Build Release
+      run: cargo build --release --verbose
+
+    # --- PACKAGING (WINDOWS) ---
+    - name: Package Windows
+      if: runner.os == 'Windows'
       shell: pwsh
       run: |
-        echo "Building GUI application for Windows"
+        $src = "${{ matrix.executable_path }}"
+        $dest = "${{ matrix.asset_name }}"
+        if (!(Test-Path $src)) { throw "Executable not found at $src" }
+        Compress-Archive -Path $src -DestinationPath $dest
+        Write-Host "Created $dest"
 
-    - name: Download dependencies
-      run: go mod download
-
-    - name: Build Windows executable
-      run: go build -trimpath -v -ldflags="-s -w -H=windowsgui" -o wabbajack-library-cleaner.exe
-      continue-on-error: false
-
-    - name: Verify build
-      shell: pwsh
+    # --- PACKAGING (LINUX) ---
+    - name: Package Linux
+      if: runner.os == 'Linux'
       run: |
-        if (Test-Path wabbajack-library-cleaner.exe) {
-          Write-Host "Build successful! File size: $((Get-Item wabbajack-library-cleaner.exe).Length / 1MB) MB"
-        } else {
-          Write-Error "Build failed - executable not found"
-          exit 1
-        }
+        if [ ! -f "${{ matrix.executable_path }}" ]; then echo "Executable not found"; exit 1; fi
+        tar -czf ${{ matrix.asset_name }} -C target/release wabbajack-library-cleaner
+        echo "Created ${{ matrix.asset_name }}"
 
-    - name: Upload build artifact
+    # --- UPLOAD ARTIFACT ---
+    - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: wabbajack-library-cleaner-windows
-        path: wabbajack-library-cleaner.exe
+        name: asset-${{ matrix.os }}
+        path: ${{ matrix.asset_name }}
 
-  lint:
-    name: Lint Code
-    runs-on: windows-latest
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.21'
-        cache: true
-
-    - name: Download dependencies
-      run: go mod download
-
-    - name: Check code formatting
-      shell: pwsh
+    - name: Extract Changelog
+      id: changelog
       run: |
-        $unformatted = gofmt -l .
-        if ($unformatted) {
-          Write-Error "Code is not formatted. Run 'gofmt -w .' locally"
-          Write-Output $unformatted
-          exit 1
-        }
-        Write-Host "Code formatting OK"
+        # Extract the latest version notes from CHANGELOG.md
+        # Finds the first version header (## X.X.X) and reads until the next header
+        sed -n '/^## /{:a;n;/^## /q;p;ba}' CHANGELOG.md > RELEASE_NOTES.md
+        echo "--- Extracted Notes ---"
+        cat RELEASE_NOTES.md
+        echo "-----------------------"
 
-    - name: Run go vet
-      run: go vet ./...
-      continue-on-error: false
-
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v4
+    - name: Download Windows Asset
+      uses: actions/download-artifact@v4
       with:
-        version: latest
-        args: --timeout=5m --disable-all --enable=errcheck,gosimple,govet,ineffassign,staticcheck,unused
-      continue-on-error: true
+        name: asset-windows-latest
+
+    - name: Download Linux Asset
+      uses: actions/download-artifact@v4
+      with:
+        name: asset-ubuntu-latest
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        body_path: RELEASE_NOTES.md
+        files: |
+          wabbajack-library-cleaner-windows.zip
+          wabbajack-library-cleaner-linux.tar.gz
+        draft: false
+        prerelease: false
