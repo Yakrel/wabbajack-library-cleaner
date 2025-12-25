@@ -17,6 +17,7 @@ jobs:
     name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
@@ -42,6 +43,14 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: stable
+
+    - name: Cache Rust dependencies
+      uses: Swatinem/rust-cache@v2
+      with:
+        key: ${{ matrix.target }}
+
+    - name: Run Tests
+      run: cargo test --verbose
 
     - name: Build Release
       run: cargo build --release --verbose
@@ -82,12 +91,45 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Extract Version from Tag
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
     - name: Extract Changelog
       id: changelog
       run: |
-        # Extract the latest version notes from CHANGELOG.md
-        # Finds the first version header (## X.X.X) and reads until the next header
-        sed -n '/^## /{:a;n;/^## /q;p;ba}' CHANGELOG.md > RELEASE_NOTES.md
+        # Extract the latest version notes from CHANGELOG.md using awk
+        VERSION="${{ steps.version.outputs.VERSION }}"
+        echo "Extracting changelog for version: $VERSION"
+        
+        # Use awk to extract content between version header and next version header
+        awk -v ver="$VERSION" '
+          /^## / {
+            if (found) exit
+            if ($0 ~ ver) found=1
+            next
+          }
+          found {print}
+        ' CHANGELOG.md > RELEASE_NOTES.md
+        
+        # If version not found, get the first version section as fallback
+        if [ ! -s RELEASE_NOTES.md ]; then
+          echo "Version $VERSION not found, using first section as fallback"
+          awk '
+            /^## [0-9]/ {
+              if (found) exit
+              found=1
+              next
+            }
+            found {print}
+          ' CHANGELOG.md > RELEASE_NOTES.md
+        fi
+        
+        # If still empty, add a default message
+        if [ ! -s RELEASE_NOTES.md ]; then
+          echo "Release ${{ steps.version.outputs.VERSION }}" > RELEASE_NOTES.md
+        fi
+        
         echo "--- Extracted Notes ---"
         cat RELEASE_NOTES.md
         echo "-----------------------"
@@ -103,11 +145,13 @@ jobs:
         name: asset-ubuntu-latest
 
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
+        name: "Wabbajack Library Cleaner v${{ steps.version.outputs.VERSION }}"
         body_path: RELEASE_NOTES.md
         files: |
           wabbajack-library-cleaner-windows.zip
           wabbajack-library-cleaner-linux.tar.gz
         draft: false
         prerelease: false
+        generate_release_notes: false
