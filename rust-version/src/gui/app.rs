@@ -578,7 +578,7 @@ impl eframe::App for WabbajackCleanerApp {
                         if ui.button("Scan").clicked() {
                             if let Some(idx) = self.selected_game_folder {
                                 self.show_folder_select = false;
-                                self.perform_old_version_scan(idx, false);
+                                self.perform_old_version_scan(idx, self.pending_delete_mode);
                             }
                         }
                         if ui.button("Cancel").clicked() {

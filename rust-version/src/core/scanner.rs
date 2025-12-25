@@ -324,7 +324,7 @@ pub fn scan_folder_for_duplicates(folder_path: &Path) -> Result<OldVersionScanRe
         let part_indicator = extract_part_indicator(&mod_file.file_name)
             .or_else(|| extract_part_indicator(&mod_file.mod_name))
             .unwrap_or_default();
-        let mod_key = format!("{}:{}{}",mod_file.mod_id, normalized_name, part_indicator);
+        let mod_key = format!("{}:{}{}", mod_file.mod_id, normalized_name, part_indicator);
         
         mod_groups
             .entry(mod_key.clone())

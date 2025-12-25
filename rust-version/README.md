@@ -18,7 +18,8 @@ The release binary is approximately **6-7 MB** (compared to ~15-25 MB for the Go
 
 ### Requirements
 
-- Rust 1.88+ (tested with Rust 1.92)
+- Rust 1.88+ 
+  - Note: eframe 0.30+ has a known compatibility issue with Rust 1.92+ due to winit 0.30.12. This project uses eframe 0.29 which works with all Rust versions.
 - Linux: `libxkbcommon-dev`, `libwayland-dev` (for Wayland support)
 - Windows: No additional dependencies
 

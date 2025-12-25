@@ -170,7 +170,9 @@ fn validate_deletion_safety(duplicates: &[ModGroup], file: &ModFile) -> bool {
         let file_idx = group.files.iter().position(|f| f.full_path == file.full_path);
         
         if let Some(idx) = file_idx {
-            // Make sure we're not deleting the newest
+            // Make sure we're not deleting the newest file (newest_idx points to the file to keep)
+            // idx < newest_idx means file is older and safe to delete
+            // idx >= newest_idx means file is the newest (or beyond, which shouldn't happen)
             if idx >= group.newest_idx {
                 log::error!("Safety check failed: Attempting to delete newest file in group {}", group.mod_key);
                 return false;
