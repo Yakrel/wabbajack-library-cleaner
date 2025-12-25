@@ -10,9 +10,10 @@ mod gui;
 
 use std::path::Path;
 use eframe::egui;
+use egui::IconData;
 use gui::WabbajackCleanerApp;
 
-fn load_icon() -> Option<eframe::IconData> {
+fn load_icon() -> Option<IconData> {
     // Try to load the icon from the winres directory relative to CWD
     let icon_path = Path::new("winres/icon_main.png");
     
@@ -21,18 +22,24 @@ fn load_icon() -> Option<eframe::IconData> {
         return None;
     }
 
-    let image_reader = match image::io::Reader::open(icon_path) {
-        Ok(r) => r,
+    let image = match image::ImageReader::open(icon_path) {
+        Ok(reader) => {
+            match reader.with_guessed_format() {
+                Ok(r) => match r.decode() {
+                    Ok(img) => img,
+                    Err(e) => {
+                        log::warn!("Failed to decode icon file: {}", e);
+                        return None;
+                    }
+                },
+                Err(e) => {
+                    log::warn!("Failed to guess image format: {}", e);
+                    return None;
+                }
+            }
+        }
         Err(e) => {
             log::warn!("Failed to open icon file: {}", e);
-            return None;
-        }
-    };
-
-    let image = match image_reader.with_guessed_format().and_then(|r| r.decode()) {
-        Ok(img) => img,
-        Err(e) => {
-            log::warn!("Failed to decode icon file: {}", e);
             return None;
         }
     };
@@ -41,7 +48,7 @@ fn load_icon() -> Option<eframe::IconData> {
     let (width, height) = rgba.dimensions();
     let rgba_data = rgba.into_raw();
 
-    Some(eframe::IconData {
+    Some(IconData {
         rgba: rgba_data,
         width,
         height,

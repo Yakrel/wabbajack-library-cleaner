@@ -6,12 +6,12 @@
 // (at your option) any later version.
 
 fn main() {
-    if std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default() == "windows" {
+    // Only compile Windows resources when targeting Windows
+    #[cfg(target_os = "windows")]
+    {
         let mut res = winres::WindowsResource::new();
         // The icon path is relative to the Cargo.toml file
-        // We assume the icon is at ../winres/icon_main.ico or we will point to it
-        // Note: winres requires an .ico file for the main application icon
-        res.set_icon("../winres/icon_main.ico");
+        res.set_icon("winres/icon_main.ico");
         
         if let Err(e) = res.compile() {
             eprintln!("Error compiling Windows resources: {}", e);
