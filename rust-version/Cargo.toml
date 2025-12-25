@@ -1,0 +1,54 @@
+[package]
+name = "wabbajack-library-cleaner"
+version = "2.0.0"
+edition = "2021"
+authors = ["Berkay Yetgin"]
+description = "Clean orphaned mods and old versions from Wabbajack downloads"
+license = "GPL-3.0-or-later"
+
+[dependencies]
+# GUI framework - eframe/egui (using 0.29 for Rust 1.92 compatibility)
+# Note: eframe 0.30+ depends on winit 0.30.12 which has a compilation bug with Rust 1.92+
+eframe = { version = "0.29", default-features = false, features = ["default_fonts", "glow"] }
+egui = "0.29"
+
+# File dialog (latest)
+rfd = "0.15"
+
+# Serialization for wabbajack file parsing (latest)
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Zip file handling for .wabbajack files (latest stable)
+zip = "2.2"
+
+# Chrono for timestamp handling (latest)
+chrono = "0.4"
+
+# Logging (latest)
+log = "0.4"
+env_logger = "0.11"
+
+# Error handling (latest)
+thiserror = "1.0"
+anyhow = "1.0"
+
+[dev-dependencies]
+tempfile = "3.20"
+
+[profile.release]
+# Optimize for size while maintaining good performance
+opt-level = "z"      # Optimize for size
+lto = true           # Link-Time Optimization
+codegen-units = 1    # Better optimization
+panic = "abort"      # Smaller binary
+strip = true         # Strip symbols
+
+[profile.release-fast]
+inherits = "release"
+opt-level = 3        # Optimize for speed
+lto = true
+
+# Windows-specific settings
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1"
