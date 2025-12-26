@@ -22,11 +22,11 @@ jobs:
         include:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            asset_name: wabbajack-library-cleaner-windows.zip
+            asset_name: wabbajack-library-cleaner.exe
             executable_path: target/release/wabbajack-library-cleaner.exe
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            asset_name: wabbajack-library-cleaner-linux.tar.gz
+            asset_name: wabbajack-library-cleaner-linux
             executable_path: target/release/wabbajack-library-cleaner
 
     steps:
@@ -63,7 +63,7 @@ jobs:
         $src = "${{ matrix.executable_path }}"
         $dest = "${{ matrix.asset_name }}"
         if (!(Test-Path $src)) { throw "Executable not found at $src" }
-        Compress-Archive -Path $src -DestinationPath $dest
+        Copy-Item $src $dest
         Write-Host "Created $dest"
 
     # --- PACKAGING (LINUX) ---
@@ -71,7 +71,8 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         if [ ! -f "${{ matrix.executable_path }}" ]; then echo "Executable not found"; exit 1; fi
-        tar -czf ${{ matrix.asset_name }} -C target/release wabbajack-library-cleaner
+        cp ${{ matrix.executable_path }} ${{ matrix.asset_name }}
+        chmod +x ${{ matrix.asset_name }}
         echo "Created ${{ matrix.asset_name }}"
 
     # --- UPLOAD ARTIFACT ---
@@ -150,8 +151,8 @@ jobs:
         name: "v${{ steps.version.outputs.VERSION }}"
         body_path: RELEASE_NOTES.md
         files: |
-          wabbajack-library-cleaner-windows.zip
-          wabbajack-library-cleaner-linux.tar.gz
+          wabbajack-library-cleaner.exe
+          wabbajack-library-cleaner-linux
         draft: false
         prerelease: false
         generate_release_notes: false
