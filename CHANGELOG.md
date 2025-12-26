@@ -5,6 +5,25 @@ All notable changes to Wabbajack Library Cleaner will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.0 - 2025-12-25
+
+### Major Rewrite (Rust)
+- **Complete Rewrite in Rust:** The application has been rewritten from scratch using Rust for maximum performance and stability.
+- **Smaller Binary:** Executable size reduced by ~60% (from ~15MB to ~6MB).
+- **Parallel Processing:** Integrated `rayon` for multi-threaded file scanning and hash calculation. Uses 100% of CPU cores for lightning-fast scans.
+- **Memory Safety:** Eliminated all race conditions and memory leaks thanks to Rust's ownership model.
+
+### Added
+- **Modern GUI:** New interface built with `egui` (eframe), providing a smoother and more responsive experience.
+- **Native Dialogs:** Uses native OS file pickers via `rfd`.
+- **Automated Releases:** GitHub Actions workflow now automatically builds and releases binaries for both Windows and Linux on new tags.
+- **Cross-Platform:** Native Linux support added (compiled as binary).
+
+### Changed
+- Moved the legacy Go implementation to `legacy_go/` directory for archival purposes.
+- Defaulted to "Release" profile optimizations (`lto`, `strip`, `opt-level='z'`) for smallest possible binary size.
+- Improved logging format and output window in the GUI.
+
 ## 2.0.1 - 2025-11-15
 
 ### Fixed
