@@ -1,0 +1,158 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*" # Triggers on tags like v2.1.0
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            asset_name: wabbajack-library-cleaner.exe
+            executable_path: target/release/wabbajack-library-cleaner.exe
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            asset_name: wabbajack-library-cleaner-linux
+            executable_path: target/release/wabbajack-library-cleaner
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Linux Dependencies
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-dev libsoup-3.0-dev libwebkit2gtk-4.1-dev
+
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+
+    - name: Cache Rust dependencies
+      uses: Swatinem/rust-cache@v2
+      with:
+        key: ${{ matrix.target }}
+
+    - name: Run Tests
+      run: cargo test --quiet
+
+    - name: Build Release
+      run: cargo build --release --quiet
+
+    # --- PACKAGING (WINDOWS) ---
+    - name: Package Windows
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $src = "${{ matrix.executable_path }}"
+        $dest = "${{ matrix.asset_name }}"
+        if (!(Test-Path $src)) { throw "Executable not found at $src" }
+        Copy-Item $src $dest
+        Write-Host "Created $dest"
+
+    # --- PACKAGING (LINUX) ---
+    - name: Package Linux
+      if: runner.os == 'Linux'
+      run: |
+        if [ ! -f "${{ matrix.executable_path }}" ]; then echo "Executable not found"; exit 1; fi
+        cp ${{ matrix.executable_path }} ${{ matrix.asset_name }}
+        chmod +x ${{ matrix.asset_name }}
+        echo "Created ${{ matrix.asset_name }}"
+
+    # --- UPLOAD ARTIFACT ---
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: asset-${{ matrix.os }}
+        path: ${{ matrix.asset_name }}
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Extract Version from Tag
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+    - name: Extract Changelog
+      id: changelog
+      run: |
+        # Extract the latest version notes from CHANGELOG.md using awk
+        VERSION="${{ steps.version.outputs.VERSION }}"
+        echo "Extracting changelog for version: $VERSION"
+        
+        # Use awk to extract content between version header and next version header
+        awk -v ver="$VERSION" '
+          /^## / {
+            if (found) exit
+            if ($0 ~ ver) found=1
+            next
+          }
+          found {print}
+        ' CHANGELOG.md > RELEASE_NOTES.md
+        
+        # If version not found, get the first version section as fallback
+        if [ ! -s RELEASE_NOTES.md ]; then
+          echo "Version $VERSION not found, using first section as fallback"
+          awk '
+            /^## [0-9]/ {
+              if (found) exit
+              found=1
+              next
+            }
+            found {print}
+          ' CHANGELOG.md > RELEASE_NOTES.md
+        fi
+        
+        # If still empty, add a default message
+        if [ ! -s RELEASE_NOTES.md ]; then
+          echo "Release ${{ steps.version.outputs.VERSION }}" > RELEASE_NOTES.md
+        fi
+        
+        echo "--- Extracted Notes ---"
+        cat RELEASE_NOTES.md
+        echo "-----------------------"
+
+    - name: Download Windows Asset
+      uses: actions/download-artifact@v4
+      with:
+        name: asset-windows-latest
+
+    - name: Download Linux Asset
+      uses: actions/download-artifact@v4
+      with:
+        name: asset-ubuntu-latest
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: "v${{ steps.version.outputs.VERSION }}"
+        body_path: RELEASE_NOTES.md
+        files: |
+          wabbajack-library-cleaner.exe
+          wabbajack-library-cleaner-linux
+        draft: false
+        prerelease: false
+        generate_release_notes: false
