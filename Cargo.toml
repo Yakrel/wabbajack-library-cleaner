@@ -6,6 +6,14 @@ authors = ["Berkay Yetgin"]
 description = "Clean orphaned mods and old versions from Wabbajack downloads"
 license = "GPL-3.0-or-later"
 
+[lib]
+name = "wabbajack_library_cleaner"
+path = "src/lib.rs"
+
+[[bin]]
+name = "wabbajack-library-cleaner"
+path = "src/main.rs"
+
 [dependencies]
 # GUI framework - eframe/egui
 # Using 0.29 for broad Rust version compatibility (eframe 0.30+ has winit 0.30.12 
@@ -56,6 +64,9 @@ inherits = "release"
 opt-level = 3        # Optimize for speed
 lto = true
 
+[build-dependencies]
+winres = "0.1"
+
 # Windows-specific settings
 [target.'cfg(windows)'.build-dependencies]
-winres = "0.1"
+# winres moved to global build-dependencies

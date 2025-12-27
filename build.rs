@@ -6,16 +6,24 @@
 // (at your option) any later version.
 
 fn main() {
-    // Only compile Windows resources when targeting Windows
-    #[cfg(target_os = "windows")]
-    {
+    // Check if the TARGET we are compiling for is Windows
+    let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
+    
+    if target_os == "windows" {
         let mut res = winres::WindowsResource::new();
-        // The icon path is relative to the Cargo.toml file
         res.set_icon("winres/icon_main.ico");
+        
+        // If we are cross-compiling from Linux, help winres find the tool
+        // (Though strictly speaking usually not needed if in PATH, but safe to do)
+        #[cfg(unix)]
+        {
+            // If the standard mingw windres is available, usage is automatic usually,
+            // but we can enforce it if needed. For now let's rely on defaults 
+            // as 'winres' is quite good at finding 'x86_64-w64-mingw32-windres'
+        }
 
         if let Err(e) = res.compile() {
             eprintln!("Error compiling Windows resources: {}", e);
-            // Don't fail the build if icon is missing, just print error
         }
     }
 }

@@ -1,3 +1,5 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 // Copyright (C) 2025 Berkay Yetgin
 //
 // This program is free software: you can redistribute it and/or modify
@@ -5,39 +7,25 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
-mod core;
-mod gui;
-
 use eframe::egui;
 use egui::IconData;
-use gui::WabbajackCleanerApp;
-use std::path::Path;
+use wabbajack_library_cleaner::gui::WabbajackCleanerApp;
+use std::io::Cursor;
 
 fn load_icon() -> Option<IconData> {
-    // Try to load the icon from the winres directory relative to CWD
-    let icon_path = Path::new("winres/icon_main.png");
+    // Embed the icon directly into the binary
+    let icon_bytes = include_bytes!("../winres/icon_main.png");
 
-    if !icon_path.exists() {
-        log::warn!("Icon file not found at {:?}", icon_path);
-        return None;
-    }
-
-    let image = match image::ImageReader::open(icon_path) {
-        Ok(reader) => match reader.with_guessed_format() {
-            Ok(r) => match r.decode() {
-                Ok(img) => img,
-                Err(e) => {
-                    log::warn!("Failed to decode icon file: {}", e);
-                    return None;
-                }
-            },
+    let image = match image::ImageReader::new(Cursor::new(icon_bytes)).with_guessed_format() {
+        Ok(reader) => match reader.decode() {
+            Ok(img) => img,
             Err(e) => {
-                log::warn!("Failed to guess image format: {}", e);
+                log::warn!("Failed to decode embedded icon: {}", e);
                 return None;
             }
         },
         Err(e) => {
-            log::warn!("Failed to open icon file: {}", e);
+            log::warn!("Failed to guess embedded icon format: {}", e);
             return None;
         }
     };
