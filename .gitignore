@@ -1,1 +1,5 @@
 target/
+
+# Large test files (not needed for CI - tests are synthetic)
+tests/*.wabbajack
+tests/*.metadata
