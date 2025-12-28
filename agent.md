@@ -1,4 +1,4 @@
-# Claude Communication Guidelines
+# Agent Communication Guidelines
 
 ## Tone & Style
 
