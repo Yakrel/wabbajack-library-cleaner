@@ -113,17 +113,34 @@ pub fn get_all_mod_files(game_folders: &[std::path::PathBuf]) -> Result<Vec<ModF
                 .par_iter()
                 .filter_map(|entry| {
                     let filename = entry.file_name().to_string_lossy().to_string();
+                    
+                    // Check if it is an archive file
                     if !is_wabbajack_file(&filename) {
                         return None;
                     }
 
-                    if let Some(mut mod_file) = parse_mod_filename(&filename) {
-                        let full_path = entry.path();
-                        if let Ok(metadata) = fs::metadata(&full_path) {
-                            mod_file.full_path = full_path;
-                            mod_file.size = metadata.len();
-                            return Some(mod_file);
+                    // Try to parse as Nexus mod, otherwise treat as generic archive
+                    let mut mod_file = parse_mod_filename(&filename).unwrap_or_else(|| {
+                        // Generic archive file (e.g. from GitHub/Direct URL)
+                        // We track it so we can detect if it is Orphaned (unused)
+                        ModFile {
+                            file_name: filename.clone(),
+                            full_path: std::path::PathBuf::new(),
+                            mod_name: filename.clone(), // Use full filename as name
+                            mod_id: "0".to_string(),    // Default ID for unknown
+                            file_id: None,
+                            version: "0.0".to_string(),
+                            timestamp: "0".to_string(),
+                            size: 0,
+                            is_patch: false,
                         }
+                    });
+
+                    let full_path = entry.path();
+                    if let Ok(metadata) = fs::metadata(&full_path) {
+                        mod_file.full_path = full_path;
+                        mod_file.size = metadata.len();
+                        return Some(mod_file);
                     }
                     None
                 })
@@ -136,48 +153,32 @@ pub fn get_all_mod_files(game_folders: &[std::path::PathBuf]) -> Result<Vec<ModF
 
 /// Detect orphaned mods by comparing mod files with active modlists
 pub fn detect_orphaned_mods(mod_files: &[ModFile], active_modlists: &[ModlistInfo]) -> ScanResult {
-    // Build combined sets of all used ModIDs and ModID+FileID pairs
+    // Build combined sets for matching
+    let mut used_file_names = std::collections::HashSet::new();
     let mut used_mod_ids = std::collections::HashSet::new();
-    let mut used_mod_file_ids = std::collections::HashSet::new();
 
     for modlist in active_modlists {
+        for file_name in &modlist.used_file_names {
+            used_file_names.insert(file_name.clone());
+        }
         for mod_key in &modlist.used_mod_keys {
             used_mod_ids.insert(mod_key.clone());
-        }
-        for mod_file_key in &modlist.used_mod_file_ids {
-            used_mod_file_ids.insert(mod_file_key.clone());
         }
     }
 
     log::info!(
+        "Total unique file names in active modlists: {}",
+        used_file_names.len()
+    );
+    log::info!(
         "Total unique ModIDs in active modlists: {}",
         used_mod_ids.len()
     );
-    log::info!(
-        "Total unique ModID+FileID pairs: {}",
-        used_mod_file_ids.len()
-    );
-
-    // Use thread-safe sets for parallel lookup
-    // Since we only read, standard HashSet is fine if wrapped or cloned,
-    // but here we just pass references to the closure.
 
     let (used_mods, orphaned_mods): (Vec<ModFile>, Vec<OrphanedMod>) =
         mod_files.par_iter().partition_map(|mod_file| {
-            let mut is_used = false;
-
-            // First, try precise matching with ModID+FileID if available
-            if let Some(ref file_id) = mod_file.file_id {
-                let mod_file_key = format!("{}-{}", mod_file.mod_id, file_id);
-                if used_mod_file_ids.contains(&mod_file_key) {
-                    is_used = true;
-                }
-            }
-
-            // Fall back to ModID-only matching
-            if !is_used && used_mod_ids.contains(&mod_file.mod_id) {
-                is_used = true;
-            }
+            // Primary matching: exact file name match (most reliable)
+            let is_used = used_file_names.contains(&mod_file.file_name);
 
             if is_used {
                 rayon::iter::Either::Left(mod_file.clone())
@@ -391,6 +392,13 @@ pub fn scan_folder_for_duplicates(folder_path: &Path) -> Result<OldVersionScanRe
                 continue;
             }
         };
+
+        // Skip generic files that don't have a valid ModID/Timestamp parsed
+        // We can't determine version history for these.
+        if mod_file.mod_id == "0" || mod_file.timestamp == "0" {
+            skipped += 1;
+            continue;
+        }
 
         let full_path = entry.path();
         let metadata = fs::metadata(&full_path)?;
@@ -634,12 +642,19 @@ mod tests {
         let mut used_mod_file_ids = std::collections::HashSet::new();
         used_mod_file_ids.insert("123-456".to_string());
 
+        // File names that are "used"
+        let mut used_file_names = std::collections::HashSet::new();
+        used_file_names.insert("mod1.7z".to_string());
+        used_file_names.insert("mod2.7z".to_string());
+        used_file_names.insert("mod3.7z".to_string());
+
         let modlist = ModlistInfo {
             file_path: std::path::PathBuf::new(),
             name: "Test Modlist".to_string(),
-            mod_count: 2,
+            mod_count: 3,
             used_mod_keys,
             used_mod_file_ids,
+            used_file_names,
         };
 
         let result = detect_orphaned_mods(&mod_files, &[modlist]);

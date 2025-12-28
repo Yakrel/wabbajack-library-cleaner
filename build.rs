@@ -8,18 +8,17 @@
 fn main() {
     // Check if the TARGET we are compiling for is Windows
     let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
-    
+
     if target_os == "windows" {
         let mut res = winres::WindowsResource::new();
         res.set_icon("winres/icon_main.ico");
-        
-        // If we are cross-compiling from Linux, help winres find the tool
-        // (Though strictly speaking usually not needed if in PATH, but safe to do)
+
+        // Explicitly set windres tool for cross-compilation on Linux
         #[cfg(unix)]
         {
-            // If the standard mingw windres is available, usage is automatic usually,
-            // but we can enforce it if needed. For now let's rely on defaults 
-            // as 'winres' is quite good at finding 'x86_64-w64-mingw32-windres'
+            res.set_toolkit_path("/usr/bin");
+            res.set_windres_path("x86_64-w64-mingw32-windres");
+            res.set_ar_path("x86_64-w64-mingw32-ar");
         }
 
         if let Err(e) = res.compile() {

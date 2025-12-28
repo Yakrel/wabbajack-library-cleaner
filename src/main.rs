@@ -9,8 +9,8 @@
 
 use eframe::egui;
 use egui::IconData;
-use wabbajack_library_cleaner::gui::WabbajackCleanerApp;
 use std::io::Cursor;
+use wabbajack_library_cleaner::gui::WabbajackCleanerApp;
 
 fn load_icon() -> Option<IconData> {
     // Embed the icon directly into the binary
@@ -53,10 +53,10 @@ fn main() -> eframe::Result<()> {
 
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size([1200.0, 900.0])
-            .with_min_inner_size([800.0, 600.0])
+            .with_inner_size([1280.0, 800.0])
+            .with_min_inner_size([1024.0, 700.0])
             .with_title("Wabbajack Library Cleaner")
-            .with_icon(icon.unwrap_or_default()), // Use loaded icon or default empty
+            .with_icon(icon.unwrap_or_default()),
         ..Default::default()
     };
 

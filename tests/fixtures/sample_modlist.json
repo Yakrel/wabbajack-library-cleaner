@@ -1,0 +1,895 @@
+{
+  "Name": "Begin Again",
+  "Version": "5.1.0",
+  "Author": "SpringHeelJon",
+  "Archives": [
+    {
+      "Hash": "ObVYhfLLgsg=",
+      "Meta": "[General]\ngameName=site\nmodID=874\nfileID=3835",
+      "Name": "Mod Organizer 2.5.2-ML1.5 Archive-874-2-5-2-ML1-5-1723841178.7z",
+      "Size": 148585557,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "ModdingLinked",
+        "Description": "A (third party) fork of Mod Organizer 2 bringing a series of improvements and preventing common annoyances.",
+        "FileID": 3835,
+        "GameName": "ModdingTools",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/2295/images/874/874-1715706423-466257600.png",
+        "IsNSFW": false,
+        "ModID": 874,
+        "Name": "Mod Organizer 2 - ModdingLinked Edition",
+        "Version": "2.5.1rc2-ML1.1"
+      }
+    },
+    {
+      "Hash": "K1qyP90grn4=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=92458\nfileID=1000155991",
+      "Name": "3rd Person Aim Fix (ESP Version)-92458-1-03-1754853901.7z",
+      "Size": 794894,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Wombat",
+        "Description": "Fixes the long standing issue of shots not hitting the crosshair in 3rd person",
+        "FileID": 1000155991,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/92458/92458-1748733233-2088082602.jpeg",
+        "IsNSFW": false,
+        "ModID": 92458,
+        "Name": "3rd Person Aim Fix - ESPless",
+        "Version": "1.0"
+      }
+    },
+    {
+      "Hash": "2JOmKjEk6Pk=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=69486\nfileID=1000149955",
+      "Name": "Bathroom Doors Overhaul - TTW-69486-1-5-1744333457.7z",
+      "Size": 2302040,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Nehred",
+        "Description": "Replaces and adds bathrooms doors all over the Mojave Wasteland. People can finally take a dump in private.",
+        "FileID": 1000149955,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/69486/69486-1595211427-1997011034.png",
+        "IsNSFW": false,
+        "ModID": 69486,
+        "Name": "Bathroom Doors Overhaul",
+        "Version": "1.4.1"
+      }
+    },
+    {
+      "Hash": "FyhsT9ARqBo=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=83629\nfileID=1000129969",
+      "Name": "Consistent Pip-Boy Icons v5 - DLC's Items-83629-1-6-1714928213.zip",
+      "Size": 558052,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "ItsMeJesusHChrist",
+        "Description": "Featuring meticulously hand-drawn Item icons seen in the DLC's of Fallout New Vegas and Fallout 3, ensuring a visually consistent and immersive experience.",
+        "FileID": 1000129969,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/83629/83629-1699169317-1144979185.png",
+        "IsNSFW": false,
+        "ModID": 83629,
+        "Name": "Consistent Pip-Boy Icons v5 - DLC's Items",
+        "Version": "1.0"
+      }
+    },
+    {
+      "Hash": "w3YRINq/QmE=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=90660\nfileID=1000145563",
+      "Name": "Curtain Bangs-90660-v1-00-1737309762.zip",
+      "Size": 1855174,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "puddlepond",
+        "Description": "a new hairstyle for female couriers",
+        "FileID": 1000145563,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/90660/90660-1737308752-2061808224.jpeg",
+        "IsNSFW": false,
+        "ModID": 90660,
+        "Name": "Curtain Bangs - New Hairstyle",
+        "Version": "v1.00"
+      }
+    },
+    {
+      "Hash": "ELFSCdJLqjA=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=91038\nfileID=1000162891",
+      "Name": "Main - Goodies - TTW-91038-2-3-5aWAP-1765378842.7z",
+      "Size": 2289689,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Qolore7 - AvtomatKalashnikov47 - AVeryUncreativeUsername - MoBurma - FiveNakey - ZhangYueZhi",
+        "Description": "Patches for Qolore's Goodies: TTW, FPGE, etc. And TTW plugin for FiveNakey's Uncut Goodies.",
+        "FileID": 1000162891,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/91038/91038-1740250123-39624871.png",
+        "IsNSFW": false,
+        "ModID": 91038,
+        "Name": "Goodies Patches - TTW FPGE and More",
+        "Version": "1.3"
+      }
+    },
+    {
+      "Hash": "ni85IoXDdY0=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=94581\nfileID=1000161603",
+      "Name": "Lip Motion Fix (BSA archives)-94581-0-6-1763445318.7z",
+      "Size": 380360562,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Asterra",
+        "Description": "Overhauls most dialogue in the game and fixes a 17-year-old bug that prevented an entire phoneme (speech sound) from working at all.  FNV/FO3/TTW",
+        "FileID": 1000161603,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/94581/94581-1762960629-527037349.png",
+        "IsNSFW": false,
+        "ModID": 94581,
+        "Name": "Lip Motion Fix",
+        "Version": "0.61"
+      }
+    },
+    {
+      "Hash": "e87w7Di7ApU=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=89069\nfileID=1000161675",
+      "Name": "Performance Of The Titans-89069-3-0-1763564891.zip",
+      "Size": 3063342,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Inthegrave",
+        "Description": "Mod that improves game performance and stability by removing unnecessary and unseen geometry for major areas of the New Vegas worldspace and it's DLCs.",
+        "FileID": 1000161675,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/89069/89069-1726036241-1566035492.png",
+        "IsNSFW": false,
+        "ModID": 89069,
+        "Name": "Performance Of The Titans",
+        "Version": "1.0"
+      }
+    },
+    {
+      "Hash": "vRNgKTbDNnQ=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=93484\nfileID=1000158281",
+      "Name": "Pip-Boy Light Indicator-93484-1-2-1758251874.7z",
+      "Size": 43627,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "MrDeeArr",
+        "Description": "Simply displays a customizable HUD icon on the screen that appears when the Pip-Boy light is active, inspired by a feature in Fallout 4.",
+        "FileID": 1000158281,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/93484/93484-1756395853-731592302.png",
+        "IsNSFW": false,
+        "ModID": 93484,
+        "Name": "Pip-Boy Light Indicator (ESPless)",
+        "Version": "1.1.5"
+      }
+    },
+    {
+      "Hash": "GBUcdNdE6G0=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=80701\nfileID=1000107418",
+      "Name": "Scope Aim Tweaks (Plugin)-80701-1-0-1680903873.7z",
+      "Size": 1634,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Nehred",
+        "Description": "Configurable tweaks when aiming with a scope such as blur and fade in from black.",
+        "FileID": 1000107418,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/80701/80701-1680903774-1403136186.jpeg",
+        "IsNSFW": false,
+        "ModID": 80701,
+        "Name": "Scope Aim Tweaks",
+        "Version": "1.0"
+      }
+    },
+    {
+      "Hash": "rf+znwoNGok=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=56257\nfileID=1000097956",
+      "Name": "Strip Wall Billboards-56257-1-01-1661092926.zip",
+      "Size": 3156,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "sandbox6",
+        "Description": "Adds previously unused billboards which were only seen during the intro to The Strip's perimeter wall making it slightly less dull.\n\nThere are only three images on the billboards used in different orientations, but with 91 of them added to the entire wall it's a huge improvement over the boring vanilla walls.",
+        "FileID": 1000097956,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/56257-1-1404138986.jpg",
+        "IsNSFW": false,
+        "ModID": 56257,
+        "Name": "Strip Wall Billboards",
+        "Version": "1.01"
+      }
+    },
+    {
+      "Hash": "2iST2YpyT5Y=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=92643\nfileID=1000153517",
+      "Name": "TTW - Less Super Mutant Overlords-92643-1-0-1750091729.7z",
+      "Size": 608,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "TPFradeN",
+        "Description": "TTW - Less Super Mutant Overlords is a mod that lets lower level Super Mutants spawn more often alongside Overlords.",
+        "FileID": 1000153517,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/92643/92643-1750091552-780490481.png",
+        "IsNSFW": false,
+        "ModID": 92643,
+        "Name": "TTW - Less Super Mutant Overlords",
+        "Version": "1.0"
+      }
+    },
+    {
+      "Hash": "Nrhio53T7l8=",
+      "Meta": "[General]\ndirectURL=https://github.com/Qolore7/the-sands/releases/download/vanilla-ui-plus/Vanilla.UI.Plus.9.48.7z",
+      "Name": "Vanilla.UI.Plus.9.48.7z",
+      "Size": 760435,
+      "State": {
+        "$type": "HttpDownloader, Wabbajack.Lib",
+        "Headers": [],
+        "Url": "https://github.com/Qolore7/the-sands/releases/download/vanilla-ui-plus/Vanilla.UI.Plus.9.48.7z"
+      }
+    },
+    {
+      "Hash": "Ywr9tlZF08o=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=83861\nfileID=1000149401",
+      "Name": "Weathers Revised-83861-1-0-13-1743529989.7z",
+      "Size": 565760,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "ConfidenceMan doodlez",
+        "Description": "A comprehensive revision of every weather in the base game and all DLCs, with beautifully contrasting natural hues alongside improved tone mapping, bloom, and atmospheric effects.",
+        "FileID": 1000149401,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/83861/83861-1700865686-1431491831.png",
+        "IsNSFW": false,
+        "ModID": 83861,
+        "Name": "Weathers Revised",
+        "Version": "1.0.8"
+      }
+    },
+    {
+      "Hash": "o90I4RuvnWY=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=86243\nfileID=1000157504",
+      "Name": "3D Grenade Indicator-86243-2-4-1757096089.zip",
+      "Size": 14177,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Stentorious",
+        "Description": "Adds a UI element showing the position of grenades in 3D space, additionally highlighting blast radius and fuse timer.",
+        "FileID": 1000157504,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/86243/86243-1714064219-823540399.png",
+        "IsNSFW": false,
+        "ModID": 86243,
+        "Name": "3D Grenade Indicator",
+        "Version": "1.1"
+      }
+    },
+    {
+      "Hash": "vhNF29EoRoo=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=79547\nfileID=1000163934",
+      "Name": "Begin Again Configs-79547-5-1-0-1766348230.7z",
+      "Size": 437158,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "SpringHeelJon",
+        "Description": "Begin Again is a modlist focused on bringing the gameplay feel of later Fallout titles into Fallout 3 and New vegas. Whilst being careful to preserve what made those games unique. Overhauled locations, textures, characters and gunplay in a simple to install package thanks to Wabbajack.",
+        "FileID": 1000163934,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/79547/79547-1675544910-1917372839.png",
+        "IsNSFW": false,
+        "ModID": 79547,
+        "Name": "Begin Again - Wabbajack modlist for TTW",
+        "Version": "2.3"
+      }
+    },
+    {
+      "Hash": "IRhAm7FNexs=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=76866\nfileID=1000119146",
+      "Name": "Character Preset Menu - Preset Collection-76866-1-02-1700158086.zip",
+      "Size": 8618,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Catakysm",
+        "Description": "Some character presets for lStewieAl's Character Preset Menu.",
+        "FileID": 1000119146,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/76866/76866-1665242397-692240290.jpeg",
+        "IsNSFW": false,
+        "ModID": 76866,
+        "Name": "Character Preset Menu - Preset Collection",
+        "Version": "1.01"
+      }
+    },
+    {
+      "Hash": "1wIRIm59JQM=",
+      "Meta": "[General]\ngameName=FalloutNewVegas\ngameFile=FalloutNV.exe",
+      "Name": "FalloutNV.exe",
+      "Size": 16549704,
+      "State": {
+        "$type": "GameFileSourceDownloader, Wabbajack.Lib",
+        "Game": "FalloutNewVegas",
+        "GameFile": "FalloutNV.exe",
+        "GameVersion": "1.4.0.525",
+        "Hash": "1wIRIm59JQM="
+      }
+    },
+    {
+      "Hash": "zEK/0hGNXes=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=88533\nfileID=1000159324",
+      "Name": "Local Map Overhaul-88533-3-0-1759780357.zip",
+      "Size": 32765,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Stentorious",
+        "Description": "Overhauls the information shown on the Local Map. Adds dynamic icons to NPCs, creatures, collectables and much more! Fully configurable!",
+        "FileID": 1000159324,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/88533/88533-1722675137-1813176273.png",
+        "IsNSFW": false,
+        "ModID": 88533,
+        "Name": "Local Map Overhaul - ESPless",
+        "Version": "1.0"
+      }
+    },
+    {
+      "Hash": "HGDFcV+23Z0=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=87590\nfileID=1000142886",
+      "Name": "Physically Based Vehicles-87590-1-2-1731516646.rar",
+      "Size": 512291656,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Bale",
+        "Description": "Replaces most common vehicles models with high quality counterparts.",
+        "FileID": 1000142886,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/87590%2F87590-1717873215-2126873424.png",
+        "IsNSFW": false,
+        "ModID": 87590,
+        "Name": "Physically Based Vehicles",
+        "Version": "1.0"
+      }
+    },
+    {
+      "Hash": "f9MsC/3hCGo=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=79687\nfileID=1000106744",
+      "Name": "(A) SAR Settings - DT-79687-2-01-1679500858.7z",
+      "Size": 1711,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "i3ncore",
+        "Description": "Adds a simple animation command line to each grunt when hit.",
+        "FileID": 1000106744,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/79687/79687-1674204221-1500915667.png",
+        "IsNSFW": false,
+        "ModID": 79687,
+        "Name": "Simple Attack Reactions - Limb-Specific Animations",
+        "Version": "2a"
+      }
+    },
+    {
+      "Hash": "v+qhuVFA4Qk=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=78688\nfileID=1000141861",
+      "Name": "Titans of The New West-78688-2-1-46-1729758235.7z",
+      "Size": 77380340,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Wombat",
+        "Description": "Version 2.0 of classic style heavy power armor mod that adds lots of new features and content, including animations, sound effects, and native TTW support.",
+        "FileID": 1000141861,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/78688/78688-1695446547-1917074542.jpeg",
+        "IsNSFW": false,
+        "ModID": 78688,
+        "Name": "Titans of The New West 2.0",
+        "Version": "2.1.03"
+      }
+    },
+    {
+      "Hash": "FDkTM/qcJfM=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=94767\nfileID=1000162821",
+      "Name": "Agua Fria-94767-1-0-2b-1765303059.7z",
+      "Size": 222079,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Qolore7",
+        "Description": "The most configurable, compatible, and up-to-date JSawyer fork made for use with Viva New Vegas.",
+        "FileID": 1000162821,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/94767/94767-1764269478-1682613661.png",
+        "IsNSFW": false,
+        "ModID": 94767,
+        "Name": "Agua Fria - JSawyer Redone",
+        "Version": "1.0.1"
+      }
+    },
+    {
+      "Hash": "ORqEfyR9Ct8=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=86159\nfileID=1000129546",
+      "Name": "Ascended Stools - 2k-86159-1-1-1714662779.rar",
+      "Size": 22347779,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Heaviin",
+        "Description": "Chic, high quality stools mesh and texture replacers - Dodecagons begone!",
+        "FileID": 1000129546,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/86159/86159-1713859860-960400135.png",
+        "IsNSFW": false,
+        "ModID": 86159,
+        "Name": "Ascended Stools",
+        "Version": "1.0"
+      }
+    },
+    {
+      "Hash": "lYW34f2HLWg=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=85921\nfileID=1000129544",
+      "Name": "Ascended TV Set-85921-1-3-1714662266.rar",
+      "Size": 12105266,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Heaviin",
+        "Description": "A simple but chic TV set mesh and texture replacer",
+        "FileID": 1000129544,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/85921/85921-1712756566-1154554541.png",
+        "IsNSFW": false,
+        "ModID": 85921,
+        "Name": "Better TV Set",
+        "Version": "1.0"
+      }
+    },
+    {
+      "Hash": "4CJINoX6GdA=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=83119\nfileID=1000146633",
+      "Name": "B42 Interact-83119-0-17b-1739267784.7z",
+      "Size": 552344,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Xilandro Axeuora",
+        "Description": "Touch things, shake doors, boop terminals, rip and tear - you decide.",
+        "FileID": 1000146633,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/83119/83119-1695265037-1093326557.png",
+        "IsNSFW": false,
+        "ModID": 83119,
+        "Name": "B42 Interact - Animated Items and Interactions Framework - ESPless",
+        "Version": "0.14b"
+      }
+    },
+    {
+      "Hash": "Io6xXCuDrYI=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=83782\nfileID=1000120846",
+      "Name": "Bad Touch NVSE-83782-1-7-1703427385.zip",
+      "Size": 642250,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "DuncanWasHere",
+        "Description": "Fuck around and find out. Fire burns, electricity shocks, cacti poke, and more! A lightweight, compatibility-friendly, scripted implementation.",
+        "FileID": 1000120846,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/83782/83782-1699943761-1018082612.png",
+        "IsNSFW": false,
+        "ModID": 83782,
+        "Name": "Bad Touch NVSE",
+        "Version": "1.2.1"
+      }
+    },
+    {
+      "Hash": "VJBPAyiGkuQ=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=93872\nfileID=1000159184",
+      "Name": "Battle Rifle Beautification-93872-1-1-1759547280.rar",
+      "Size": 56080795,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Mr Grim",
+        "Description": "A HQ replacer for the Battle Rifle and This Machine",
+        "FileID": 1000159184,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/93872/93872-1758057109-1222559436.png",
+        "IsNSFW": false,
+        "ModID": 93872,
+        "Name": "Battle Rifle Beautification",
+        "Version": "1.0"
+      }
+    },
+    {
+      "Hash": "fSC3Rk7w0gI=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=94084\nfileID=1000163716",
+      "Name": "P6 - BB Guns (ESPLESS)-94084-4-0-1766164810.7z",
+      "Size": 60236497,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Postman6",
+        "Description": "High quality models/textures for the BB Guns.",
+        "FileID": 1000163716,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/94084/94084-1759358846-816047324.png",
+        "IsNSFW": false,
+        "ModID": 94084,
+        "Name": "BB Guns (ESPLESS)",
+        "Version": "1.0"
+      }
+    },
+    {
+      "Hash": "bfBwGPlTLts=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=91851\nfileID=1000158577",
+      "Name": "DC Geology-91851-1-12-1758732395.zip",
+      "Size": 85536261,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "OrgasmicSneeze",
+        "Description": "Complete texture and mesh overhaul of all base rocks, canyons, cliffs, and LOD in DC/CW for TTW.",
+        "FileID": 1000158577,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/91851/91851-1744692490-1059484811.png",
+        "IsNSFW": false,
+        "ModID": 91851,
+        "Name": "DC Geology",
+        "Version": "1.1"
+      }
+    },
+    {
+      "Hash": "b9agt0hrpyw=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=92696\nfileID=1000154084",
+      "Name": "P6 - Pulse Guns and Sonic Emitters-92696-1-2-1751280117.7z",
+      "Size": 28308877,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Postman6 and ZanthirEAS",
+        "Description": "This mod replaces the Pulse gun and all the sonic emitter variants with a high quality model/textures and add a few tweaks to make each variant standout.",
+        "FileID": 1000154084,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/92696/92696-1750600124-2128188677.png",
+        "IsNSFW": false,
+        "ModID": 92696,
+        "Name": "Pulse Guns and Sonic Emitters (ESPLESS)",
+        "Version": "1.1"
+      }
+    },
+    {
+      "Hash": "o2h5PjBHtSs=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=93026\nfileID=1000158295",
+      "Name": "1 - Gun and Friends Resources-93026-1-1-1758273095.7z",
+      "Size": 699398096,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Xamie",
+        "Description": "New home for all my small guns weapons and future gun models.",
+        "FileID": 1000158295,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/93026/93026-1754964360-1018658901.jpg",
+        "IsNSFW": false,
+        "ModID": 93026,
+        "Name": "Gun and Friends",
+        "Version": "1.0"
+      }
+    },
+    {
+      "Hash": "mFfFSz4w+xo=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=94507\nfileID=1000161773",
+      "Name": "NVAO - rockvisions (no mesh)-94507-1-1-1763743352.rar",
+      "Size": 39511021,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "rockbiter68",
+        "Description": "An animation pack featuring 9 fresh revisions of existing NVAO sets, primarily focusing on reloads, jams, attacks. Prioritizes clean, smooth motions, gameplay-friendly timings, and variety.\n\n\n\nCompletely standalone and modular.",
+        "FileID": 1000161773,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/94507/94507-1762462907-1466390664.jpg",
+        "IsNSFW": false,
+        "ModID": 94507,
+        "Name": "New Vegas Animation Overhaul (NVAO) - rockvisions",
+        "Version": "1.0.2"
+      }
+    },
+    {
+      "Hash": "DNXGRJzYjeU=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=93683\nfileID=1000157380",
+      "Name": "Decals Plus-93683-1-1756911755.zip",
+      "Size": 17207703,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "OrgasmicSneeze",
+        "Description": "Complete mesh and texture overhaul of all vanilla damage, dirt and miscellaneous decals",
+        "FileID": 1000157380,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/93683/93683-1756911335-1182020141.png",
+        "IsNSFW": false,
+        "ModID": 93683,
+        "Name": "Decals Plus",
+        "Version": "1"
+      }
+    },
+    {
+      "Hash": "JpXyemfqaqM=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=94363\nfileID=1000160444",
+      "Name": "On the Fence - A Fence and Barricade Overhaul-94363-1-03-1761742682.zip",
+      "Size": 119304016,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "OrgasmicSneeze",
+        "Description": "Complete mesh and texture overhaul of all vanilla and DLC fences &amp; barricades",
+        "FileID": 1000160444,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/94363/94363-1761615507-1531801299.png",
+        "IsNSFW": false,
+        "ModID": 94363,
+        "Name": "On the Fence - A Fence and Barricade Overhaul",
+        "Version": "1.03"
+      }
+    },
+    {
+      "Hash": "Y8VXYUfs09w=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=83815\nfileID=1000157402",
+      "Name": "MAC-10-83815-13-0-1756954896.zip",
+      "Size": 146508298,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Inthegrave",
+        "Description": "MAC-10 is a general bug fixing mod for dozens of game models across the base game and DLCs.",
+        "FileID": 1000157402,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/83815/83815-1700346730-1363304637.png",
+        "IsNSFW": false,
+        "ModID": 83815,
+        "Name": "Meshes and Collision - Totally Enhanced Nifs (MAC-TEN)",
+        "Version": "1.0"
+      }
+    },
+    {
+      "Hash": "zUh3L2PJt7c=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=93460\nfileID=1000158979",
+      "Name": "Waste-Worn Roads - Meshes-93460-1-0-1-1759269293.zip",
+      "Size": 48354799,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Spifferino",
+        "Description": "Simple and visually appealing standalone road retexture, with meshes designed to improve road visuals.",
+        "FileID": 1000158979,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/93460/93460-1762366202-1199025010.png",
+        "IsNSFW": false,
+        "ModID": 93460,
+        "Name": "Waste-Worn Roads",
+        "Version": "1.0.1"
+      }
+    },
+    {
+      "Hash": "wF6pT8b6gsY=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=94972\nfileID=1000162940",
+      "Name": "Better Factories-94972-1-0-1765415808.7z",
+      "Size": 793929,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Slick",
+        "Description": "Vanilla+ overhaul of New Vegas abandoned factories, adding a touch of polish over a lot of weird and unfinished things.",
+        "FileID": 1000162940,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/94972/94972-1765450991-1383827157.jpg",
+        "IsNSFW": false,
+        "ModID": 94972,
+        "Name": "Better Factories AIO",
+        "Version": "1.0"
+      }
+    },
+    {
+      "Hash": "Wz2she/yy2E=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=70213\nfileID=1000069244",
+      "Name": "Camp McCarran monorail animation stand alone version-70213-2-00-1609887871.rar",
+      "Size": 1032219,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "AmaccurzerO",
+        "Description": "This mods animates the Camp McCarran's monorail. This monorail will travel frequently between Camp McCarran and The Strip. Read description and watch video.",
+        "FileID": 1000069244,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/70213/70213-1603744675-1060360114.jpeg",
+        "IsNSFW": false,
+        "ModID": 70213,
+        "Name": "Camp McCarran Animated Monorail",
+        "Version": "2.00"
+      }
+    },
+    {
+      "Hash": "XAaI5sqtRJw=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=94249\nfileID=1000160549",
+      "Name": "P6 - Classic 10mm Pistols (ESPLESS)-94249-1-2-1761910610.7z",
+      "Size": 82954743,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Postman6 and Geckoinacan",
+        "Description": "High quality models/textures for the 10mm Pistols. (TTW Supported)",
+        "FileID": 1000160549,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/94249/94249-1761011265-1823223844.png",
+        "IsNSFW": false,
+        "ModID": 94249,
+        "Name": "Classic 10mm Pistols (ESPLESS)",
+        "Version": "1.0"
+      }
+    },
+    {
+      "Hash": "nrYaDhYbpCA=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=94443\nfileID=1000160819",
+      "Name": "P6 - Classic 9mm Pack (ESPLESS)-94443-1-2-1762291301.7z",
+      "Size": 78500829,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Postman6 and Geckoinacan77",
+        "Description": "High quality models/textures for the .9mm weapons. (TTW &amp; TOTNW Supported)",
+        "FileID": 1000160819,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/94443/94443-1762178576-2057918286.png",
+        "IsNSFW": false,
+        "ModID": 94443,
+        "Name": "Classic 9mm Pack (ESPLESS)",
+        "Version": "1.2"
+      }
+    },
+    {
+      "Hash": "iJgZbDtnB10=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=93069\nfileID=1000163852",
+      "Name": "P6 - Classic Miniguns (ESPLESS)-93069-3-0-1766259813.7z",
+      "Size": 44863354,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Postman6 and ZanthirEAS",
+        "Description": "High quality models/textures for the Mini-Guns. (TTW Supported)",
+        "FileID": 1000163852,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/93069/93069-1753500738-569597819.png",
+        "IsNSFW": false,
+        "ModID": 93069,
+        "Name": "Classic Miniguns (ESPLESS)",
+        "Version": "1.1"
+      }
+    },
+    {
+      "Hash": "otnsFv5jcrQ=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=88919\nfileID=1000140730",
+      "Name": "Classy Clutter Compilation-88919-V1-3-1728031049.zip",
+      "Size": 88559887,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "ZomboCrom",
+        "Description": "High Poly, High Resolution replacers for meshes and textures mostly not covered by other packs.",
+        "FileID": 1000140730,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/88919/88919-1724943666-135021670.png",
+        "IsNSFW": false,
+        "ModID": 88919,
+        "Name": "Classy Clutter Compilation - Mesh and Texture Replacers",
+        "Version": "1.0"
+      }
+    },
+    {
+      "Hash": "Qmutu1726kM=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=85024\nfileID=1000125483",
+      "Name": "Consistent Pip-Boy Icons v5 - Addendumb-85024-3-1710266854.zip",
+      "Size": 364673,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "ItsMeJesusHChrist aka LOC",
+        "Description": "This mod adds unique icons to Apparel, Weapons and Items on things that previously did not have any.",
+        "FileID": 1000125483,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/85024/85024-1708098240-369004400.png",
+        "IsNSFW": false,
+        "ModID": 85024,
+        "Name": "Consistent Pip-Boy Icons v5 - Addendumb",
+        "Version": "3"
+      }
+    },
+    {
+      "Hash": "sginYNOHoLQ=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=88979\nfileID=1000157185",
+      "Name": "Decent LOD Kit-88979-1-08-1756671250.7z",
+      "Size": 7907879,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "gosh",
+        "Description": "All my LOD, future and past, in one place.",
+        "FileID": 1000157185,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": null,
+        "IsNSFW": false,
+        "ModID": 88979,
+        "Name": "Decent LOD Kit",
+        "Version": "1.02"
+      }
+    },
+    {
+      "Hash": "soiLUVoKlOs=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=90523\nfileID=1000145201",
+      "Name": "DEE (More Expressive) - Pluginless-90523-0-1c-1736609455.zip",
+      "Size": 5730,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "various",
+        "Description": "A collection of presets for the dialogue manager",
+        "FileID": 1000145201,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/90523/90523-1736305017-452635602.png",
+        "IsNSFW": false,
+        "ModID": 90523,
+        "Name": "Dialogue Emotion Presets - Misc",
+        "Version": "0.1"
+      }
+    },
+    {
+      "Hash": "fj0zKTN/QaQ=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=91222\nfileID=1000155092",
+      "Name": "P6 - Detonators (ESPLESS)-91222-1-7-1753184219.7z",
+      "Size": 2724377,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Postman6",
+        "Description": "New detonator models, textures and animation for every single base game and DLC detonator.",
+        "FileID": 1000155092,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/91222/91222-1740949326-1848296206.png",
+        "IsNSFW": false,
+        "ModID": 91222,
+        "Name": "Detonators (ESPLESS)",
+        "Version": "1.2"
+      }
+    },
+    {
+      "Hash": "cq6CP9gTBas=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=34917\nfileID=1000017433",
+      "Name": "Enhanced Blood Textures-34917-2-22c.rar",
+      "Size": 14287229,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "dDefinder",
+        "Description": "Increases the resolution size from 256 to 1024 and created new textures for screen, world, wounds, static blood decals and gore. Esps are used to increase the size appearance of the blood. Adjustments for screenblood, add more giblets and new wounds related to the weapon type. Ini will change max amount and lifetime for blood.",
+        "FileID": 1000017433,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/34917-1-1290866020.jpg",
+        "IsNSFW": false,
+        "ModID": 34917,
+        "Name": "Enhanced Blood Textures for NV v2_22c",
+        "Version": "2.22c"
+      }
+    },
+    {
+      "Hash": "ZdGJxdC8OrI=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=89410\nfileID=1000154108",
+      "Name": "EVE - Lite-89410-2-0-1751322904.7z",
+      "Size": 339670632,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "Weijiesen and Jonnyeah",
+        "Description": "Small ESP edit to EVE who wants a more vanilla style. Removal of Sound Effects, Kill Animations, and Explosions for smoother performance and more compatibility while retaining the weapons, impacts, and the vanilla projectiles from EVE. Tale of Two Wastelands Compatible.",
+        "FileID": 1000154108,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/89410/89410-1728591053-1734477807.jpg",
+        "IsNSFW": false,
+        "ModID": 89410,
+        "Name": "EVE - Lite (TTW Compatible)",
+        "Version": "1.2"
+      }
+    },
+    {
+      "Hash": "GLlgrwGQCOk=",
+      "Meta": "[General]\ngameName=falloutnv\nmodID=42666\nfileID=1000077705",
+      "Name": "EVE v1.19 - Alternate-42666-1-19-1623957730.zip",
+      "Size": 366426813,
+      "State": {
+        "$type": "NexusDownloader, Wabbajack.Lib",
+        "Author": "weijiesen and jonnyeah",
+        "Description": "New Crit Kill animation scenes, HD blood fx, HD fire fx, HD explosions, new bullet impacts, energy wep projectiles &amp; impacts, unrivaled textures, and more",
+        "FileID": 1000077705,
+        "GameName": "FalloutNewVegas",
+        "ImageURL": "https://staticdelivery.nexusmods.com/mods/130/images/42666-1-1412238478.jpg",
+        "IsNSFW": false,
+        "ModID": 42666,
+        "Name": "EVE - Essential Visual Enhancements",
+        "Version": "1.19"
+      }
+    }
+  ]
+}

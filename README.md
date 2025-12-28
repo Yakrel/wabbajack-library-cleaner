@@ -1,4 +1,4 @@
-# Wabbajack Library Cleaner (Rust Version)
+# Wabbajack Library Cleaner
 
 Cross-platform GUI tool to clean orphaned mods and old versions from your Wabbajack downloads folder.
 
@@ -10,45 +10,47 @@ Cross-platform GUI tool to clean orphaned mods and old versions from your Wabbaj
 - **Statistics View**: View library size by game
 - **Modern GUI**: Built with egui/eframe
 
-## Binary Size
+## Download
 
-The release binary is approximately **6-7 MB** (compared to ~15-25 MB for the Go/Fyne version).
+Download the latest release from the [Releases](https://github.com/Yakrel/wabbajack-library-cleaner/releases) page.
 
-## Building
+## Building from Source
 
 ### Requirements
 
-- Rust 1.88+ 
-  - Note: eframe 0.30+ has a known compatibility issue with Rust 1.92+ due to winit 0.30.12. This project uses eframe 0.29 which works with all Rust versions.
-- Linux: `libxkbcommon-dev`, `libwayland-dev` (for Wayland support)
-- Windows: No additional dependencies
+- Rust 1.70+
+- For Windows cross-compilation from Linux: `mingw-w64`
 
 ### Build Commands
 
 ```bash
-# Debug build
-cargo build
-
-# Release build (optimized for size)
+# Linux build
 cargo build --release
+
+# Windows build (native on Windows)
+cargo build --release
+
+# Windows build (cross-compile from Linux)
+rustup target add x86_64-pc-windows-gnu
+cargo build --release --target x86_64-pc-windows-gnu
 
 # Run tests
 cargo test
 ```
 
+### Output Locations
+
+- Linux: `target/release/wabbajack-library-cleaner`
+- Windows (native): `target/release/wabbajack-library-cleaner.exe`
+- Windows (cross): `target/x86_64-pc-windows-gnu/release/wabbajack-library-cleaner.exe`
+
 ### Release Build Optimizations
 
-The release profile is configured for minimal binary size:
+The release profile is configured for minimal binary size (~4-7 MB):
 - `opt-level = "z"` - Optimize for size
 - `lto = true` - Link-Time Optimization
 - `codegen-units = 1` - Better optimization
-- `panic = "abort"` - Smaller binary
 - `strip = true` - Strip symbols
-
-For faster runtime at cost of larger binary:
-```bash
-cargo build --profile release-fast
-```
 
 ## Project Structure
 
@@ -58,34 +60,27 @@ cargo build --profile release-fast
 ├── build.rs            # Build script for Windows icon
 ├── src/
 │   ├── main.rs         # Entry point
+│   ├── lib.rs          # Library exports
 │   ├── core/           # Core logic
-│   │   ├── mod.rs
 │   │   ├── types.rs    # Data structures
 │   │   ├── parser.rs   # Mod filename and .wabbajack parsing
 │   │   ├── scanner.rs  # Directory scanning and orphan detection
 │   │   └── cleaner.rs  # File deletion and backup
 │   └── gui/            # GUI layer
-│       ├── mod.rs
 │       └── app.rs      # eframe/egui application
-├── legacy_go/          # Previous Go implementation (archived)
+├── tests/              # Integration tests
+│   ├── integration_test.rs
+│   └── fixtures/       # Test fixtures
 └── winres/             # Windows resources (icons)
 ```
-
-## Legacy Version
-
-The previous Go/Fyne implementation has been moved to the `legacy_go/` directory for archival purposes. The Rust version is the active development branch.
 
 ## Dependencies
 
 - **eframe/egui 0.29**: GUI framework
-- **rayon**: Parallel processing for fast scanning
+- **rayon**: Parallel processing
 - **rfd**: Native file dialogs
-- **image**: Icon loading
-- **serde/serde_json**: JSON parsing for .wabbajack files
+- **serde/serde_json**: JSON parsing
 - **zip**: Archive handling
-- **chrono**: Date/time formatting
-- **anyhow/thiserror**: Error handling
-- **log/env_logger**: Logging
 
 ## License
 

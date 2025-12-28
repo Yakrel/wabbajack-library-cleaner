@@ -42,6 +42,8 @@ pub struct ModlistInfo {
     pub used_mod_keys: HashSet<String>,
     /// ModID+FileID combination for precise matching
     pub used_mod_file_ids: HashSet<String>,
+    /// Exact file names from the modlist for precise matching
+    pub used_file_names: HashSet<String>,
 }
 
 /// Represents a mod file that's not used by any active modlist

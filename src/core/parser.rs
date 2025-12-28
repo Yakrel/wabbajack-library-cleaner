@@ -190,10 +190,6 @@ pub fn is_wabbajack_file(filename: &str) -> bool {
         return false;
     }
 
-    if !filename.contains('-') {
-        return false;
-    }
-
     let lower = filename.to_lowercase();
     if lower.contains(".part")
         || lower.contains(".tmp")
@@ -302,15 +298,23 @@ pub fn parse_wabbajack_file(file_path: &Path) -> Result<ModlistInfo> {
     // Build sets for used mods
     let mut used_mod_keys = HashSet::new();
     let mut used_mod_file_ids = HashSet::new();
+    let mut used_file_names = HashSet::new();
 
-    for archive in &modlist.archives {
-        if let Some(mod_id) = archive.state.mod_id {
+    for arch in &modlist.archives {
+        // Collect exact file names for precise matching
+        if let Some(ref name) = arch.name {
+            if !name.is_empty() {
+                used_file_names.insert(name.clone());
+            }
+        }
+        
+        if let Some(mod_id) = arch.state.mod_id {
             if mod_id > 0 {
                 // ModID-only key (backward compatibility)
                 used_mod_keys.insert(mod_id.to_string());
 
                 // ModID+FileID combination key for precise matching
-                if let Some(file_id) = archive.state.file_id {
+                if let Some(file_id) = arch.state.file_id {
                     if file_id > 0 {
                         used_mod_file_ids.insert(format!("{}-{}", mod_id, file_id));
                     }
@@ -320,11 +324,11 @@ pub fn parse_wabbajack_file(file_path: &Path) -> Result<ModlistInfo> {
     }
 
     log::info!(
-        "Parsed modlist '{}': {} archives, {} unique ModIDs, {} ModID+FileID pairs",
+        "Parsed modlist '{}': {} archives, {} unique ModIDs, {} file names",
         modlist.name,
         modlist.archives.len(),
         used_mod_keys.len(),
-        used_mod_file_ids.len()
+        used_file_names.len()
     );
 
     Ok(ModlistInfo {
@@ -333,6 +337,7 @@ pub fn parse_wabbajack_file(file_path: &Path) -> Result<ModlistInfo> {
         mod_count: modlist.archives.len(),
         used_mod_keys,
         used_mod_file_ids,
+        used_file_names,
     })
 }
 
