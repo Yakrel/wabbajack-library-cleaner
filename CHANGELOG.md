@@ -2,6 +2,15 @@
 
 All notable changes to Wabbajack Library Cleaner will be documented in this file.
 
+## 2.1.1 - 2025-12-29
+
+### Added
+- Confirm Deletion modal when Backup Mode is disabled to prevent accidental data loss.
+
+### Fixed
+- Fixed a potential crash (panic) when the downloads folder was not selected before starting a scan.
+- Improved error logging and state management in the GUI layer.
+
 ## 2.1.0 - 2025-12-28
 
 ### Major Rewrite (Rust)

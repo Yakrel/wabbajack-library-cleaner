@@ -44,10 +44,17 @@ enum AsyncMessage {
 }
 
 #[derive(PartialEq, Clone, Copy)]
+enum DeleteAction {
+    Orphaned,
+    OldVersions,
+}
+
+#[derive(PartialEq, Clone, Copy)]
 enum Modal {
     None,
     About,
     FolderSelect,
+    ConfirmDelete(DeleteAction),
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -216,7 +223,16 @@ impl WabbajackCleanerApp {
             "Scanning for orphaned mods..."
         }
         .to_string();
-        let path = self.downloads_dir.clone().unwrap();
+
+        let path = match self.downloads_dir.clone() {
+            Some(p) => p,
+            None => {
+                self.log(LogLevel::Error, "Downloads directory not selected!");
+                self.is_loading = false;
+                return;
+            }
+        };
+
         let backup = if delete { self.get_backup_path() } else { None };
         let tx = self.tx.clone();
         thread::spawn(move || scan_orphaned_mods_async(path, selected, delete, backup, tx));
@@ -622,7 +638,11 @@ impl WabbajackCleanerApp {
                         )
                         .clicked()
                     {
-                        self.run_orphaned_scan(true);
+                        if self.move_to_backup {
+                            self.run_orphaned_scan(true);
+                        } else {
+                            self.modal = Modal::ConfirmDelete(DeleteAction::Orphaned);
+                        }
                     }
                 });
 
@@ -653,7 +673,11 @@ impl WabbajackCleanerApp {
                         )
                         .clicked()
                     {
-                        self.run_old_version_scan(true);
+                        if self.move_to_backup {
+                            self.run_old_version_scan(true);
+                        } else {
+                            self.modal = Modal::ConfirmDelete(DeleteAction::OldVersions);
+                        }
                     }
                 });
             });
@@ -855,6 +879,48 @@ impl WabbajackCleanerApp {
                         if ui.button(RichText::new("Close").size(14.0)).clicked() {
                             self.modal = Modal::None;
                         }
+                    });
+                });
+        }
+
+        if let Modal::ConfirmDelete(action) = self.modal {
+            egui::Window::new("Confirm Deletion")
+                .collapsible(false)
+                .resizable(false)
+                .default_width(350.0)
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+                .show(ctx, |ui| {
+                    ui.vertical_centered(|ui| {
+                        ui.label(
+                            RichText::new("WARNING")
+                                .size(20.0)
+                                .strong()
+                                .color(COLOR_DANGER),
+                        );
+                        ui.add_space(12.0);
+                        ui.label("Backup Mode is DISABLED.");
+                        ui.label("Files will be PERMANENTLY DELETED.");
+                        ui.label("This action cannot be undone.");
+                        ui.add_space(20.0);
+                        ui.horizontal(|ui| {
+                            if ui
+                                .button(
+                                    RichText::new("Yes, Delete Files")
+                                        .strong()
+                                        .color(COLOR_DANGER),
+                                )
+                                .clicked()
+                            {
+                                match action {
+                                    DeleteAction::Orphaned => self.run_orphaned_scan(true),
+                                    DeleteAction::OldVersions => self.run_old_version_scan(true),
+                                }
+                                self.modal = Modal::None;
+                            }
+                            if ui.button("Cancel").clicked() {
+                                self.modal = Modal::None;
+                            }
+                        });
                     });
                 });
         }
