@@ -6,9 +6,19 @@ Cross-platform GUI tool to clean orphaned mods and old versions from your Wabbaj
 
 - **Orphaned Mods Cleanup**: Remove mods not used by selected modlists
 - **Old Versions Cleanup**: Keep newest version of each mod, remove duplicates
-- **Safe Deletion**: Move files to timestamped backup folder (restorable)
+- **Safe Deletion**: Move files to timestamped WLC_RecycleBin folder (restorable)
 - **Statistics View**: View library size by game
 - **Modern GUI**: Built with egui/eframe
+
+## Screenshots
+
+**Cleaning in progress** — real-time progress bar while moving 1516 orphaned files (115 GB):
+
+![Cleaning in progress](docs/screenshots/cleaning-in-progress.png)
+
+**Cleanup complete** — library rescanned, results show 0 orphaned files, completion message in log:
+
+![Cleanup complete](docs/screenshots/cleanup-complete.png)
 
 ## Download
 

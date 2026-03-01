@@ -2,6 +2,23 @@
 
 All notable changes to Wabbajack Library Cleaner will be documented in this file.
 
+## 2.1.2 - 2026-03-01
+
+### Added
+- "Clear Log" button in the log panel next to "Copy Log".
+- Detailed completion message after cleanup: shows file count, total size, destination path, and a reminder to verify the modlist in Wabbajack before permanently deleting the recycle bin folder.
+
+### Changed
+- Renamed "Backup mode" to "Move to Recycle Bin" throughout the GUI.
+- Backup folder renamed from `WLC_Backup` to `WLC_RecycleBin`.
+- Confirm-delete dialog updated to say "Move to Recycle Bin is DISABLED." instead of "Backup Mode is DISABLED."
+- Old Versions folder selection dialog now has a clearer description.
+- Default window size increased to 1280×900, minimum size to 1024×750.
+- Internal rename: all `backup` identifiers in core and GUI code updated to `recycle_bin` for consistency.
+
+### Fixed
+- Progress bar no longer stays at 0% during cleanup operations. Real-time per-file progress is now reported for both Orphaned Mods and Old Versions cleanup.
+
 ## 2.1.1 - 2025-12-29
 
 ### Added

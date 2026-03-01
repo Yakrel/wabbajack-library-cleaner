@@ -21,7 +21,7 @@ pub fn is_file_locked(path: &Path) -> bool {
 }
 
 /// Delete a single mod file and its associated .meta file
-fn delete_mod_file(file: &ModFile, backup_dir: Option<&Path>) -> Result<u64, String> {
+fn delete_mod_file(file: &ModFile, recycle_bin_dir: Option<&Path>) -> Result<u64, String> {
     let path = &file.full_path;
 
     if !path.exists() {
@@ -32,22 +32,22 @@ fn delete_mod_file(file: &ModFile, backup_dir: Option<&Path>) -> Result<u64, Str
         return Err(format!("File is locked: {:?}", path));
     }
 
-    if let Some(backup) = backup_dir {
-        // Move to backup folder
-        let backup_path = backup.join(&file.file_name);
-        fs::rename(path, &backup_path).map_err(|e| format!("Failed to move file: {}", e))?;
+    if let Some(recycle_bin) = recycle_bin_dir {
+        // Move to recycle bin folder
+        let dest_path = recycle_bin.join(&file.file_name);
+        fs::rename(path, &dest_path).map_err(|e| format!("Failed to move file: {}", e))?;
 
         // Also move .meta file if exists
         let meta_full = format!("{}.meta", path.display());
         let meta_path = Path::new(&meta_full);
 
         if meta_path.exists() {
-            let backup_meta = backup.join(format!("{}.meta", file.file_name));
-            let _ = fs::rename(meta_path, backup_meta);
+            let dest_meta = recycle_bin.join(format!("{}.meta", file.file_name));
+            let _ = fs::rename(meta_path, dest_meta);
         }
 
         log::info!(
-            "Moved to backup: {} ({})",
+            "Moved to Recycle Bin: {} ({})",
             file.file_name,
             format_size(file.size)
         );
@@ -71,21 +71,22 @@ fn delete_mod_file(file: &ModFile, backup_dir: Option<&Path>) -> Result<u64, Str
 /// Delete orphaned mods
 pub fn delete_orphaned_mods(
     orphaned_mods: &[OrphanedMod],
-    backup_dir: Option<&Path>,
+    recycle_bin_dir: Option<&Path>,
     progress_callback: Option<&dyn Fn(usize, usize)>,
 ) -> DeletionResult {
     let mut result = DeletionResult::default();
     let total = orphaned_mods.len();
 
-    // Create backup directory if specified
-    if let Some(backup) = backup_dir {
-        if let Err(e) = fs::create_dir_all(backup) {
+    // Create recycle bin directory if specified
+    if let Some(recycle_bin) = recycle_bin_dir {
+        if let Err(e) = fs::create_dir_all(recycle_bin) {
             result
                 .errors
-                .push(format!("Failed to create backup folder: {}", e));
+                .push(format!("Failed to create Recycle Bin folder: {}", e));
             return result;
         }
-        log::info!("Created backup folder: {:?}", backup);
+        result.recycle_bin_path = Some(recycle_bin.to_path_buf());
+        log::info!("Created Recycle Bin folder: {:?}", recycle_bin);
     }
 
     for (i, orphaned) in orphaned_mods.iter().enumerate() {
@@ -93,7 +94,7 @@ pub fn delete_orphaned_mods(
             cb(i + 1, total);
         }
 
-        match delete_mod_file(&orphaned.file, backup_dir) {
+        match delete_mod_file(&orphaned.file, recycle_bin_dir) {
             Ok(size) => {
                 result.deleted_count += 1;
                 result.space_freed += size;
@@ -111,7 +112,7 @@ pub fn delete_orphaned_mods(
 /// Delete old versions from mod groups
 pub fn delete_old_versions(
     duplicates: &[ModGroup],
-    backup_dir: Option<&Path>,
+    recycle_bin_dir: Option<&Path>,
     progress_callback: Option<&dyn Fn(usize, usize)>,
 ) -> DeletionResult {
     let mut result = DeletionResult::default();
@@ -124,15 +125,16 @@ pub fn delete_old_versions(
 
     let total = files_to_delete.len();
 
-    // Create backup directory if specified
-    if let Some(backup) = backup_dir {
-        if let Err(e) = fs::create_dir_all(backup) {
+    // Create recycle bin directory if specified
+    if let Some(recycle_bin) = recycle_bin_dir {
+        if let Err(e) = fs::create_dir_all(recycle_bin) {
             result
                 .errors
-                .push(format!("Failed to create backup folder: {}", e));
+                .push(format!("Failed to create Recycle Bin folder: {}", e));
             return result;
         }
-        log::info!("Created backup folder: {:?}", backup);
+        result.recycle_bin_path = Some(recycle_bin.to_path_buf());
+        log::info!("Created Recycle Bin folder: {:?}", recycle_bin);
     }
 
     for (i, file) in files_to_delete.iter().enumerate() {
@@ -149,7 +151,7 @@ pub fn delete_old_versions(
             continue;
         }
 
-        match delete_mod_file(file, backup_dir) {
+        match delete_mod_file(file, recycle_bin_dir) {
             Ok(size) => {
                 result.deleted_count += 1;
                 result.space_freed += size;
@@ -297,16 +299,16 @@ mod tests {
     }
 
     #[test]
-    fn test_delete_mod_file_with_backup() {
+    fn test_delete_mod_file_to_recycle_bin() {
         let dir = tempdir().unwrap();
-        let backup_dir = dir.path().join("backup");
+        let recycle_bin_dir = dir.path().join("recycle_bin");
         let file_path = dir.path().join("test-123-1-0-1234567890.7z");
 
         let mut file = fs::File::create(&file_path).unwrap();
         file.write_all(b"test content").unwrap();
         drop(file);
 
-        fs::create_dir(&backup_dir).unwrap();
+        fs::create_dir(&recycle_bin_dir).unwrap();
 
         let mod_file = ModFile {
             file_name: "test-123-1-0-1234567890.7z".to_string(),
@@ -320,9 +322,9 @@ mod tests {
             is_patch: false,
         };
 
-        let result = delete_mod_file(&mod_file, Some(&backup_dir));
+        let result = delete_mod_file(&mod_file, Some(&recycle_bin_dir));
         assert!(result.is_ok());
         assert!(!file_path.exists());
-        assert!(backup_dir.join("test-123-1-0-1234567890.7z").exists());
+        assert!(recycle_bin_dir.join("test-123-1-0-1234567890.7z").exists());
     }
 }

@@ -23,6 +23,15 @@ fn main() {
 
         if let Err(e) = res.compile() {
             eprintln!("Error compiling Windows resources: {}", e);
+        } else {
+            // GNU linker on Linux drops .rsrc sections from static libs when
+            // no symbol is referenced. --whole-archive forces inclusion.
+            #[cfg(unix)]
+            {
+                println!("cargo:rustc-link-arg=-Wl,--whole-archive");
+                println!("cargo:rustc-link-arg=-lresource");
+                println!("cargo:rustc-link-arg=-Wl,--no-whole-archive");
+            }
         }
     }
 }

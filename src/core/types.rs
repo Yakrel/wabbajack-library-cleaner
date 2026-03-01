@@ -79,6 +79,8 @@ pub struct DeletionResult {
     pub space_freed: u64,
     pub skipped: Vec<String>,
     pub errors: Vec<String>,
+    /// Path to the recycle bin folder used, if files were moved instead of deleted
+    pub recycle_bin_path: Option<PathBuf>,
 }
 
 /// Statistics about the mod library
