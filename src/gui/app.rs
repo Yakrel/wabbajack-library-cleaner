@@ -71,7 +71,7 @@ pub struct WabbajackCleanerApp {
     modlist_selected: Vec<bool>,
     game_folders: Vec<PathBuf>,
     selected_game_folder: Option<usize>,
-    move_to_backup: bool,
+    move_to_recycle_bin: bool,
     pending_delete_mode: bool,
     tx: Sender<AsyncMessage>,
     rx: Receiver<AsyncMessage>,
@@ -95,7 +95,7 @@ impl Default for WabbajackCleanerApp {
             modlist_selected: Vec::new(),
             game_folders: Vec::new(),
             selected_game_folder: None,
-            move_to_backup: true,
+            move_to_recycle_bin: true,
             pending_delete_mode: false,
             tx,
             rx,
@@ -145,13 +145,13 @@ impl WabbajackCleanerApp {
         self.modlist_selected.iter().filter(|&&x| x).count()
     }
 
-    fn get_backup_path(&self) -> Option<PathBuf> {
-        if !self.move_to_backup {
+    fn get_recycle_bin_path(&self) -> Option<PathBuf> {
+        if !self.move_to_recycle_bin {
             return None;
         }
         self.downloads_dir.as_ref().map(|dir| {
             let ts = chrono::Local::now().format("%Y-%m-%d_%H-%M-%S");
-            dir.join("WLC_Backup").join(ts.to_string())
+            dir.join("WLC_RecycleBin").join(ts.to_string())
         })
     }
 
@@ -233,9 +233,9 @@ impl WabbajackCleanerApp {
             }
         };
 
-        let backup = if delete { self.get_backup_path() } else { None };
+        let recycle_bin = if delete { self.get_recycle_bin_path() } else { None };
         let tx = self.tx.clone();
-        thread::spawn(move || scan_orphaned_mods_async(path, selected, delete, backup, tx));
+        thread::spawn(move || scan_orphaned_mods_async(path, selected, delete, recycle_bin, tx));
     }
 
     fn run_old_version_scan(&mut self, delete: bool) {
@@ -251,12 +251,12 @@ impl WabbajackCleanerApp {
         if let Some(idx) = self.selected_game_folder {
             let folder = self.game_folders[idx].clone();
             let delete = self.pending_delete_mode;
-            let backup = if delete { self.get_backup_path() } else { None };
+            let recycle_bin = if delete { self.get_recycle_bin_path() } else { None };
             let tx = self.tx.clone();
             self.modal = Modal::None;
             self.is_loading = true;
             self.current_operation = "Scanning for old versions...".to_string();
-            thread::spawn(move || scan_old_versions_async(folder, delete, backup, tx));
+            thread::spawn(move || scan_old_versions_async(folder, delete, recycle_bin, tx));
         }
     }
 
@@ -316,14 +316,32 @@ impl WabbajackCleanerApp {
                     self.progress = None;
                 }
                 AsyncMessage::DeletionComplete(res) => {
-                    self.log(
-                        LogLevel::Info,
-                        &format!(
-                            "Cleaned {} files, freed {}",
-                            res.deleted_count,
-                            format_size(res.space_freed)
-                        ),
-                    );
+                    if let Some(ref path) = res.recycle_bin_path {
+                        self.log(
+                            LogLevel::Info,
+                            &format!(
+                                "Cleanup complete! {} files ({}) moved to '{}'. Verify your modlist in Wabbajack before permanently deleting this folder to free disk space.",
+                                res.deleted_count,
+                                format_size(res.space_freed),
+                                path.display()
+                            ),
+                        );
+                    } else {
+                        self.log(
+                            LogLevel::Info,
+                            &format!(
+                                "Cleanup complete! {} files ({}) permanently deleted.",
+                                res.deleted_count,
+                                format_size(res.space_freed)
+                            ),
+                        );
+                    }
+                    if !res.errors.is_empty() {
+                        self.log(
+                            LogLevel::Warning,
+                            &format!("{} error(s) occurred during cleanup.", res.errors.len()),
+                        );
+                    }
                     self.is_loading = false;
                     self.progress = None;
                     self.run_analysis();
@@ -376,7 +394,8 @@ impl eframe::App for WabbajackCleanerApp {
                             self.modal = Modal::About;
                         }
                         ui.add_space(16.0);
-                        ui.checkbox(&mut self.move_to_backup, "Backup mode");
+                        ui.checkbox(&mut self.move_to_recycle_bin, "Move to Recycle Bin")
+                            .on_hover_text("Moves deleted files to a timestamped WLC_RecycleBin folder in your downloads directory instead of permanently deleting them. This is NOT Windows' Recycle Bin — files go to WLC_RecycleBin\\<timestamp>\\ and can be manually deleted later.");
                     });
                 });
             });
@@ -420,6 +439,9 @@ impl eframe::App for WabbajackCleanerApp {
                                 .collect::<Vec<_>>()
                                 .join("\n");
                             ui.ctx().copy_text(log_text);
+                        }
+                        if ui.small_button("Clear Log").clicked() {
+                            self.log_messages.clear();
                         }
                     });
                 });
@@ -579,7 +601,10 @@ impl WabbajackCleanerApp {
                 ui.add_space(4.0);
                 egui::ScrollArea::vertical()
                     .max_height(100.0)
+                    .auto_shrink([false, true])
+                    .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::VisibleWhenNeeded)
                     .show(ui, |ui| {
+                        ui.set_min_width(ui.available_width());
                         for (i, ml) in self.modlists.iter().enumerate() {
                             let checked = self.modlist_selected.get(i).copied().unwrap_or(false);
                             let mut new_checked = checked;
@@ -638,7 +663,7 @@ impl WabbajackCleanerApp {
                         )
                         .clicked()
                     {
-                        if self.move_to_backup {
+                        if self.move_to_recycle_bin {
                             self.run_orphaned_scan(true);
                         } else {
                             self.modal = Modal::ConfirmDelete(DeleteAction::Orphaned);
@@ -673,7 +698,7 @@ impl WabbajackCleanerApp {
                         )
                         .clicked()
                     {
-                        if self.move_to_backup {
+                        if self.move_to_recycle_bin {
                             self.run_old_version_scan(true);
                         } else {
                             self.modal = Modal::ConfirmDelete(DeleteAction::OldVersions);
@@ -898,7 +923,7 @@ impl WabbajackCleanerApp {
                                 .color(COLOR_DANGER),
                         );
                         ui.add_space(12.0);
-                        ui.label("Backup Mode is DISABLED.");
+                        ui.label("Move to Recycle Bin is DISABLED.");
                         ui.label("Files will be PERMANENTLY DELETED.");
                         ui.label("This action cannot be undone.");
                         ui.add_space(20.0);
@@ -912,10 +937,16 @@ impl WabbajackCleanerApp {
                                 .clicked()
                             {
                                 match action {
-                                    DeleteAction::Orphaned => self.run_orphaned_scan(true),
-                                    DeleteAction::OldVersions => self.run_old_version_scan(true),
+                                    DeleteAction::Orphaned => {
+                                        self.run_orphaned_scan(true);
+                                        self.modal = Modal::None;
+                                    }
+                                    DeleteAction::OldVersions => {
+                                        // run_old_version_scan sets modal = FolderSelect;
+                                        // do not override it with None here
+                                        self.run_old_version_scan(true);
+                                    }
                                 }
-                                self.modal = Modal::None;
                             }
                             if ui.button("Cancel").clicked() {
                                 self.modal = Modal::None;
@@ -926,13 +957,19 @@ impl WabbajackCleanerApp {
         }
 
         if self.modal == Modal::FolderSelect {
+            let is_clean = self.pending_delete_mode;
+            let dialog_desc = if is_clean {
+                "Select which game's download folder to clean old versions from:"
+            } else {
+                "Select which game's download folder to scan for old mod versions:"
+            };
             egui::Window::new("Select Game Folder")
                 .collapsible(false)
                 .resizable(false)
                 .default_width(350.0)
                 .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
                 .show(ctx, |ui| {
-                    ui.label("Select a game folder to scan:");
+                    ui.label(dialog_desc);
                     ui.add_space(8.0);
                     egui::ScrollArea::vertical()
                         .max_height(200.0)
@@ -949,10 +986,12 @@ impl WabbajackCleanerApp {
                         });
                     ui.add_space(8.0);
                     ui.horizontal(|ui| {
+                        let btn_label = if is_clean { "Start Clean" } else { "Start Scan" };
+                        let btn_color = if is_clean { COLOR_WARNING } else { COLOR_ACCENT };
                         if ui
                             .add_enabled(
                                 self.selected_game_folder.is_some(),
-                                egui::Button::new("Start Scan").fill(COLOR_ACCENT),
+                                egui::Button::new(btn_label).fill(btn_color),
                             )
                             .clicked()
                         {
@@ -1032,7 +1071,7 @@ fn scan_orphaned_mods_async(
     path: PathBuf,
     modlists: Vec<ModlistInfo>,
     delete: bool,
-    backup: Option<PathBuf>,
+    recycle_bin: Option<PathBuf>,
     tx: Sender<AsyncMessage>,
 ) {
     tx.send(AsyncMessage::Progress(
@@ -1061,12 +1100,22 @@ fn scan_orphaned_mods_async(
     .ok();
     let result = detect_orphaned_mods(&files, &modlists);
     if delete && !result.orphaned_mods.is_empty() {
+        let total = result.orphaned_mods.len();
         tx.send(AsyncMessage::Progress(
             "Cleaning...".to_string(),
-            Some((0, result.orphaned_mods.len())),
+            Some((0, total)),
         ))
         .ok();
-        let del = delete_orphaned_mods(&result.orphaned_mods, backup.as_deref(), None);
+        let tx_cb = tx.clone();
+        let progress_cb = move |i: usize, t: usize| {
+            tx_cb
+                .send(AsyncMessage::Progress(
+                    format!("Cleaning... {}/{}", i, t),
+                    Some((i, t)),
+                ))
+                .ok();
+        };
+        let del = delete_orphaned_mods(&result.orphaned_mods, recycle_bin.as_deref(), Some(&progress_cb));
         tx.send(AsyncMessage::DeletionComplete(del)).ok();
     } else {
         tx.send(AsyncMessage::OrphanedScanComplete(result)).ok();
@@ -1076,7 +1125,7 @@ fn scan_orphaned_mods_async(
 fn scan_old_versions_async(
     path: PathBuf,
     delete: bool,
-    backup: Option<PathBuf>,
+    recycle_bin: Option<PathBuf>,
     tx: Sender<AsyncMessage>,
 ) {
     tx.send(AsyncMessage::Progress("Scanning...".to_string(), None))
@@ -1089,12 +1138,22 @@ fn scan_old_versions_async(
         }
     };
     if delete && !result.duplicates.is_empty() {
+        let total = result.total_files;
         tx.send(AsyncMessage::Progress(
             "Cleaning...".to_string(),
-            Some((0, result.total_files)),
+            Some((0, total)),
         ))
         .ok();
-        let del = delete_old_versions(&result.duplicates, backup.as_deref(), None);
+        let tx_cb = tx.clone();
+        let progress_cb = move |i: usize, t: usize| {
+            tx_cb
+                .send(AsyncMessage::Progress(
+                    format!("Cleaning... {}/{}", i, t),
+                    Some((i, t)),
+                ))
+                .ok();
+        };
+        let del = delete_old_versions(&result.duplicates, recycle_bin.as_deref(), Some(&progress_cb));
         tx.send(AsyncMessage::DeletionComplete(del)).ok();
     } else {
         tx.send(AsyncMessage::OldVersionScanComplete(result)).ok();
