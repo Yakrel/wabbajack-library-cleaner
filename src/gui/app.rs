@@ -233,7 +233,11 @@ impl WabbajackCleanerApp {
             }
         };
 
-        let recycle_bin = if delete { self.get_recycle_bin_path() } else { None };
+        let recycle_bin = if delete {
+            self.get_recycle_bin_path()
+        } else {
+            None
+        };
         let tx = self.tx.clone();
         thread::spawn(move || scan_orphaned_mods_async(path, selected, delete, recycle_bin, tx));
     }
@@ -251,7 +255,11 @@ impl WabbajackCleanerApp {
         if let Some(idx) = self.selected_game_folder {
             let folder = self.game_folders[idx].clone();
             let delete = self.pending_delete_mode;
-            let recycle_bin = if delete { self.get_recycle_bin_path() } else { None };
+            let recycle_bin = if delete {
+                self.get_recycle_bin_path()
+            } else {
+                None
+            };
             let tx = self.tx.clone();
             self.modal = Modal::None;
             self.is_loading = true;
@@ -602,7 +610,9 @@ impl WabbajackCleanerApp {
                 egui::ScrollArea::vertical()
                     .max_height(100.0)
                     .auto_shrink([false, true])
-                    .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::VisibleWhenNeeded)
+                    .scroll_bar_visibility(
+                        egui::scroll_area::ScrollBarVisibility::VisibleWhenNeeded,
+                    )
                     .show(ui, |ui| {
                         ui.set_min_width(ui.available_width());
                         for (i, ml) in self.modlists.iter().enumerate() {
@@ -986,8 +996,16 @@ impl WabbajackCleanerApp {
                         });
                     ui.add_space(8.0);
                     ui.horizontal(|ui| {
-                        let btn_label = if is_clean { "Start Clean" } else { "Start Scan" };
-                        let btn_color = if is_clean { COLOR_WARNING } else { COLOR_ACCENT };
+                        let btn_label = if is_clean {
+                            "Start Clean"
+                        } else {
+                            "Start Scan"
+                        };
+                        let btn_color = if is_clean {
+                            COLOR_WARNING
+                        } else {
+                            COLOR_ACCENT
+                        };
                         if ui
                             .add_enabled(
                                 self.selected_game_folder.is_some(),
@@ -1115,7 +1133,11 @@ fn scan_orphaned_mods_async(
                 ))
                 .ok();
         };
-        let del = delete_orphaned_mods(&result.orphaned_mods, recycle_bin.as_deref(), Some(&progress_cb));
+        let del = delete_orphaned_mods(
+            &result.orphaned_mods,
+            recycle_bin.as_deref(),
+            Some(&progress_cb),
+        );
         tx.send(AsyncMessage::DeletionComplete(del)).ok();
     } else {
         tx.send(AsyncMessage::OrphanedScanComplete(result)).ok();
@@ -1153,7 +1175,11 @@ fn scan_old_versions_async(
                 ))
                 .ok();
         };
-        let del = delete_old_versions(&result.duplicates, recycle_bin.as_deref(), Some(&progress_cb));
+        let del = delete_old_versions(
+            &result.duplicates,
+            recycle_bin.as_deref(),
+            Some(&progress_cb),
+        );
         tx.send(AsyncMessage::DeletionComplete(del)).ok();
     } else {
         tx.send(AsyncMessage::OldVersionScanComplete(result)).ok();
