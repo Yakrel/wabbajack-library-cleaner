@@ -108,6 +108,7 @@ jobs:
       with:
         name: asset-${{ matrix.os }}
         path: ${{ matrix.asset_name }}
+        retention-days: 14
 
   # 3. Create GitHub Release
   release:
@@ -184,3 +185,64 @@ jobs:
         draft: false
         prerelease: false
         generate_release_notes: false
+
+  cleanup-old-artifacts:
+    name: Cleanup old release artifacts
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - release
+    if: ${{ always() }}
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Keep only the latest 5 release artifacts per platform
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const keepPerName = 5;
+            const artifactNames = new Set([
+              'asset-windows-latest',
+              'asset-ubuntu-latest',
+            ]);
+
+            const artifacts = await github.paginate(
+              github.rest.actions.listArtifactsForRepo,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100,
+              }
+            );
+
+            const grouped = new Map();
+            for (const artifact of artifacts) {
+              if (artifact.expired || !artifactNames.has(artifact.name)) {
+                continue;
+              }
+
+              if (!grouped.has(artifact.name)) {
+                grouped.set(artifact.name, []);
+              }
+
+              grouped.get(artifact.name).push(artifact);
+            }
+
+            for (const [name, items] of grouped.entries()) {
+              items.sort((left, right) => {
+                return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
+              });
+
+              const staleArtifacts = items.slice(keepPerName);
+              core.info(`${name}: keeping ${Math.min(items.length, keepPerName)}, deleting ${staleArtifacts.length}`);
+
+              for (const artifact of staleArtifacts) {
+                core.info(`Deleting artifact ${artifact.id} (${artifact.name}) created at ${artifact.created_at}`);
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id,
+                });
+              }
+            }
