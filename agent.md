@@ -53,3 +53,7 @@ Keep them short and descriptive:
 - ✅ "Fix loop variable capture bugs"
 - ✅ "Simplify CHANGELOG format"
 - ❌ "Fixed several critical issues with the UI threading model that were causing performance problems"
+
+### Author Configuration
+- **IMPORTANT**: All commits and tags must be authored under your GitHub name and email: `Berkay Yetgin <85676216+Yakrel@users.noreply.github.com>`.
+- Never commit as `root` or other default system users. Always run `git config user.name "Berkay Yetgin"` and `git config user.email "85676216+Yakrel@users.noreply.github.com"` locally in the repository before making commits.
