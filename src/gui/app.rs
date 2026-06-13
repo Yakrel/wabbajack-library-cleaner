@@ -1028,36 +1028,67 @@ impl WabbajackCleanerApp {
 fn scan_wabbajack_dir(path: PathBuf, tx: Sender<AsyncMessage>) {
     tx.send(AsyncMessage::Progress("Scanning...".to_string(), None))
         .ok();
-    let entries = match std::fs::read_dir(&path) {
-        Ok(e) => e,
-        Err(e) => {
-            tx.send(AsyncMessage::Error(e.to_string())).ok();
-            return;
-        }
-    };
-
     let mut modlist_map: std::collections::HashMap<String, (PathBuf, String)> =
         std::collections::HashMap::new();
-    for entry in entries.flatten() {
-        if !entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
-            continue;
+
+    // 1. Check if the selected directory itself contains `.wabbajack` files directly
+    if let Ok(files) = find_wabbajack_files(&path) {
+        for wbfile in files {
+            let basename = wbfile
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_default();
+            modlist_map.insert(basename, (wbfile, String::new()));
         }
-        let version_name = entry.file_name().to_string_lossy().to_string();
-        let modlists_path = entry.path().join("downloaded_mod_lists");
-        if modlists_path.exists() {
-            if let Ok(files) = find_wabbajack_files(&modlists_path) {
+    }
+
+    // 2. Check if a `downloaded_mod_lists` folder exists directly inside the selected path
+    if modlist_map.is_empty() {
+        let direct_modlists_path = path.join("downloaded_mod_lists");
+        if direct_modlists_path.exists() {
+            if let Ok(files) = find_wabbajack_files(&direct_modlists_path) {
                 for wbfile in files {
                     let basename = wbfile
                         .file_name()
                         .map(|n| n.to_string_lossy().to_string())
                         .unwrap_or_default();
-                    let key = basename.split("@@").next().unwrap_or(&basename).to_string();
-                    if modlist_map
-                        .get(&key)
-                        .map(|(_, v)| &version_name > v)
-                        .unwrap_or(true)
-                    {
-                        modlist_map.insert(key, (wbfile, version_name.clone()));
+                    modlist_map.insert(basename, (wbfile, String::new()));
+                }
+            }
+        }
+    }
+
+    // 3. Fall back to scanning subdirectories (original Wabbajack structure) if no files found yet
+    if modlist_map.is_empty() {
+        let entries = match std::fs::read_dir(&path) {
+            Ok(e) => e,
+            Err(e) => {
+                tx.send(AsyncMessage::Error(e.to_string())).ok();
+                return;
+            }
+        };
+
+        for entry in entries.flatten() {
+            if !entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
+                continue;
+            }
+            let version_name = entry.file_name().to_string_lossy().to_string();
+            let modlists_path = entry.path().join("downloaded_mod_lists");
+            if modlists_path.exists() {
+                if let Ok(files) = find_wabbajack_files(&modlists_path) {
+                    for wbfile in files {
+                        let basename = wbfile
+                            .file_name()
+                            .map(|n| n.to_string_lossy().to_string())
+                            .unwrap_or_default();
+                        let key = basename;
+                        if modlist_map
+                            .get(&key)
+                            .map(|(_, v)| &version_name > v)
+                            .unwrap_or(true)
+                        {
+                            modlist_map.insert(key, (wbfile, version_name.clone()));
+                        }
                     }
                 }
             }
@@ -1183,5 +1214,121 @@ fn scan_old_versions_async(
         tx.send(AsyncMessage::DeletionComplete(del)).ok();
     } else {
         tx.send(AsyncMessage::OldVersionScanComplete(result)).ok();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::{self, File};
+    use std::io::Write;
+    use std::sync::mpsc;
+    use tempfile::TempDir;
+    use zip::write::SimpleFileOptions;
+    use zip::ZipWriter;
+
+    fn create_dummy_wabbajack(path: &std::path::Path, name: &str) {
+        let file = File::create(path).unwrap();
+        let mut zip = ZipWriter::new(file);
+        let options = SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
+        zip.start_file("modlist", options).unwrap();
+        let json = format!(
+            r#"{{
+                "Name": "{}",
+                "Version": "1.0.0",
+                "Author": "TestAuthor",
+                "Archives": []
+            }}"#,
+            name
+        );
+        zip.write_all(json.as_bytes()).unwrap();
+        zip.finish().unwrap();
+    }
+
+    #[test]
+    fn test_scan_wabbajack_dir_direct_files() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_dir.path();
+
+        // Create a direct .wabbajack file
+        let file_path = path.join("TestModlist@@Game.wabbajack");
+        create_dummy_wabbajack(&file_path, "TestModlist");
+
+        let (tx, rx) = mpsc::channel();
+        scan_wabbajack_dir(path.to_path_buf(), tx);
+
+        // Expect ModlistsParsed message
+        let mut parsed = false;
+        while let Ok(msg) = rx.recv() {
+            if let AsyncMessage::ModlistsParsed(modlists) = msg {
+                assert_eq!(modlists.len(), 1);
+                assert_eq!(modlists[0].name, "TestModlist");
+                parsed = true;
+                break;
+            }
+        }
+        assert!(parsed);
+    }
+
+    #[test]
+    fn test_scan_wabbajack_dir_direct_subdir() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_dir.path();
+
+        // Create a downloaded_mod_lists folder
+        let sub_dir = path.join("downloaded_mod_lists");
+        fs::create_dir(&sub_dir).unwrap();
+
+        let file_path = sub_dir.join("TestModlist@@Game.wabbajack");
+        create_dummy_wabbajack(&file_path, "TestModlist");
+
+        let (tx, rx) = mpsc::channel();
+        scan_wabbajack_dir(path.to_path_buf(), tx);
+
+        let mut parsed = false;
+        while let Ok(msg) = rx.recv() {
+            if let AsyncMessage::ModlistsParsed(modlists) = msg {
+                assert_eq!(modlists.len(), 1);
+                assert_eq!(modlists[0].name, "TestModlist");
+                parsed = true;
+                break;
+            }
+        }
+        assert!(parsed);
+    }
+
+    #[test]
+    fn test_scan_wabbajack_dir_version_subdirs() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_dir.path();
+
+        // Create version subdirs
+        let v1_dir = path.join("3.5.0.0").join("downloaded_mod_lists");
+        let v2_dir = path.join("3.6.0.0").join("downloaded_mod_lists");
+        fs::create_dir_all(&v1_dir).unwrap();
+        fs::create_dir_all(&v2_dir).unwrap();
+
+        // Put the same file in both, but different names or content to see it de-duplicates
+        let file_path1 = v1_dir.join("TestModlist@@Game.wabbajack");
+        create_dummy_wabbajack(&file_path1, "TestModlistV1");
+
+        let file_path2 = v2_dir.join("TestModlist@@Game.wabbajack");
+        create_dummy_wabbajack(&file_path2, "TestModlistV2");
+
+        let (tx, rx) = mpsc::channel();
+        scan_wabbajack_dir(path.to_path_buf(), tx);
+
+        let mut parsed = false;
+        while let Ok(msg) = rx.recv() {
+            if let AsyncMessage::ModlistsParsed(modlists) = msg {
+                assert_eq!(modlists.len(), 1);
+                // Should keep the one from the higher version (3.6.0.0)
+                assert_eq!(modlists[0].name, "TestModlistV2");
+                parsed = true;
+                break;
+            }
+        }
+        assert!(parsed);
     }
 }

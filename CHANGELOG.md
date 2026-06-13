@@ -2,6 +2,14 @@
 
 All notable changes to Wabbajack Library Cleaner will be documented in this file.
 
+## 2.1.3 - 2026-06-13
+
+### Added
+- Flexible directory scanning: Users can now select folders containing `.wabbajack` files directly or a `downloaded_mod_lists` subdirectory, in addition to the standard Wabbajack version directories.
+
+### Fixed
+- Fixed a bug where multiple modlists from the same author were overwritten in the HashMap (using author name as the key instead of the full basename), ensuring all modlists from an author are loaded and displayed.
+
 ## 2.1.2 - 2026-03-01
 
 ### Added
