@@ -1230,8 +1230,8 @@ mod tests {
     fn create_dummy_wabbajack(path: &std::path::Path, name: &str) {
         let file = File::create(path).unwrap();
         let mut zip = ZipWriter::new(file);
-        let options = SimpleFileOptions::default()
-            .compression_method(zip::CompressionMethod::Stored);
+        let options =
+            SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
         zip.start_file("modlist", options).unwrap();
         let json = format!(
             r#"{{
